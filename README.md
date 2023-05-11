@@ -109,9 +109,9 @@ _(Dash Yarou)_
 
 # PCB Information / Control Layout
 
-| Title            | Joystick | Service Menu                                                                                                 | Dip Switches                                                                                              | Shared Controls | Dip Default | PCB Information |
-|------------------|----------|--------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|-----------------|-------------|-----------------|
-| **Dash Yarou** | 8-Way    | [**Service Menu**](FILLME) | [**Dip Sheet**](FILLME) | No              | N/A         | WIP             |
+| Title            | Joystick | Service Menu                                                                                               | Dip Switches                                                                                              | Shared Controls | Dip Default | PCB Information |
+|------------------|----------|------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|-----------------|-------------|-----------------|
+| **Dash Yarou** | 8-Way    | [**Service Menu**](https://github.com/va7deo/rallybike/assets/32810066/e9eb65dd-17db-4bc5-8389-1da235419b0c) | [**Dip Sheet**](https://github.com/va7deo/rallybike/assets/32810066/528ca930-ce88-49b5-9530-bf70c9ae004e) | No              | N/A         | WIP             |
 
 <br>
 
