@@ -1,5 +1,5 @@
-set_global_assignment -name SDC_FILE toaplan1.sdc
-set_global_assignment -name SYSTEMVERILOG_FILE toaplan1.sv
+set_global_assignment -name SDC_FILE rallybike.sdc
+set_global_assignment -name SYSTEMVERILOG_FILE rallybike.sv
 set_global_assignment -name QIP_FILE rtl/t80/T80.qip
 set_global_assignment -name QIP_FILE rtl/fx68k/fx68k.qip
 set_global_assignment -name QIP_FILE rtl/jtopl/jt26.qip
@@ -20,4 +20,3 @@ set_global_assignment -name VHDL_FILE rtl/mem/segment.vhd
 set_global_assignment -name VHDL_FILE rtl/mem/download_buffer.vhd
 set_global_assignment -name VHDL_FILE rtl/mem/sdram.vhd
 set_global_assignment -name VHDL_FILE rtl/mem/dual_port_ram.vhd
-set_global_assignment -name QIP_FILE rtl/TMS320C1X/TMS320C1X.qip

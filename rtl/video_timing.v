@@ -51,6 +51,15 @@ assign hc = h;
 
 assign vc = v;
 
+
+reg [1:0] vtotal_282_flag;
+always @ (posedge clk) begin // Set horizontal lines flag for 60Hz
+    if (VTOTAL == 269)
+        vtotal_282_flag <= 0;
+    else
+        vtotal_282_flag <= 1;
+end
+
 always @ (posedge clk) begin
 
     if (reset) begin
@@ -65,7 +74,7 @@ always @ (posedge clk) begin
     end else begin
         // counter
         hbl_delay <= hbl;
-        if (h == HTOTAL - (refresh_mod ? 4'd5 : 3'd0)) begin
+        if (h == HTOTAL - (refresh_mod ? 4'd5 : 3'd0)) begin // 450 Lines standard (445 Lines for NTSC standard 15.73kHz line freq)
             h <= 0;
             hbl <= 0;
 
@@ -78,7 +87,7 @@ always @ (posedge clk) begin
                 vsync <= 1;
             end
 
-            if (v == VTOTAL) begin
+            if (v == VTOTAL - (refresh_mod ? (vtotal_282_flag ? 5'd19 : 4'd7) : 3'd0)) begin // 282 Lines standard (263 Lines for 60Hz)
                 v <= 0;
                 vbl <= 0;
             end else begin
