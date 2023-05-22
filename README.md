@@ -55,7 +55,7 @@ _(Dash Yarou)_
 
 ### Main Components
 
-| Chip                                                                   | Use              |
+| Chip                                                                   | Function         |
 | -----------------------------------------------------------------------|------------------|
 | [**Motorola 68000 CPU**](https://en.wikipedia.org/wiki/Motorola_68000) | Main CPU         |
 | [**Zilog Z80 CPU**](https://en.wikipedia.org/wiki/Zilog_Z80)           | Sound CPU        |
