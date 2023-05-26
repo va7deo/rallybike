@@ -51,15 +51,8 @@ module chip_select
     
 );
 
-localparam pcb_zero_wing     = 0;
-localparam pcb_out_zone_conv = 1;
-localparam pcb_out_zone      = 2;
-localparam pcb_hellfire      = 3;
 localparam pcb_truxton       = 4;
-localparam pcb_fireshark     = 5;
-localparam pcb_vimana        = 6;
 localparam pcb_rallybike     = 7;
-localparam pcb_demonwld      = 8;
 
 function m68k_cs;
         input [23:0] base_address;
@@ -82,7 +75,6 @@ always @ (*) begin
 
     prog_rom_cs       = m68k_cs( 'h000000, 19 );
     ram_cs            = m68k_cs( 'h080000, 14 );
-
     bcu_flip_cs       = m68k_cs( 'h100000,  1 );
     tile_ofs_cs       = m68k_cs( 'h100002,  1 );
     tile_attr_cs      = m68k_cs( 'h100004,  1 );
