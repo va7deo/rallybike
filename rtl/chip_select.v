@@ -2,7 +2,7 @@
 
 module chip_select
 (
-    input  [7:0] pcb,
+    input        pcb,
 
     input [23:0] cpu_a,
     input        cpu_as_n,
@@ -48,11 +48,9 @@ module chip_select
 
     // other params
     output reg [15:0] scroll_y_offset
-    
 );
 
-localparam pcb_truxton       = 4;
-localparam pcb_rallybike     = 7;
+localparam pcb_rallybike     = 0;
 
 function m68k_cs;
         input [23:0] base_address;
@@ -92,7 +90,7 @@ always @ (*) begin
     crtc_cs           = m68k_cs( 'h140008,  3 );
 
     shared_ram_cs     = m68k_cs( 'h180000, 12 );
-    
+
     z80_p1_cs         = z80_cs( 8'h00 );
     z80_p2_cs         = z80_cs( 8'h10 );
     z80_system_cs     = z80_cs( 8'h20 );
@@ -100,40 +98,19 @@ always @ (*) begin
     z80_dswb_cs       = z80_cs( 8'h50 );
     z80_sound0_cs     = z80_cs( 8'h60 );
     z80_sound1_cs     = z80_cs( 8'h61 );
-    z80_tjump_cs      = z80_cs( 8'h70 );    
-    
-    // Setup lines depending on pcb
-    case (pcb)
-        pcb_truxton: begin
-            frame_done_cs     = m68k_cs( 'h0c0000,  1 );
+    z80_tjump_cs      = z80_cs( 8'h70 );
 
-            sprite_ram_cs     = 0 ;
-            
-            sprite_ofs_cs     = m68k_cs( 'h0c0002,  1 );
-            sprite_cs         = m68k_cs( 'h0c0004,  1 );
-            sprite_size_cs    = m68k_cs( 'h0c0006,  1 );
+    frame_done_cs     = 1'b0;
 
-            fcu_flip_cs       = m68k_cs( 'h1c0006,  1 );
+    sprite_ram_cs     = m68k_cs( 'h0c0000, 12 );
 
-            reset_z80_cs      = m68k_cs( 'h1d0000,  1 );
-        end
+    sprite_ofs_cs     = 0 ;
+    sprite_cs         = 0 ;
+    sprite_size_cs    = 0 ;
 
-        pcb_rallybike: begin
-            frame_done_cs     = 1'b0;
+    fcu_flip_cs       = 0 ;
 
-            sprite_ram_cs     = m68k_cs( 'h0c0000, 12 );
-            
-            sprite_ofs_cs     = 0 ;
-            sprite_cs         = 0 ;
-            sprite_size_cs    = 0 ;
-
-            fcu_flip_cs       = 0 ;
-          
-            reset_z80_cs      = m68k_cs( 'h1c8000,  1 );
-        end
-
-        default:;
-    endcase
+    reset_z80_cs      = m68k_cs( 'h1c8000,  1 );
 end
 
 endmodule
