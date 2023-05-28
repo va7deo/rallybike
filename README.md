@@ -5,13 +5,15 @@ FPGA compatible core of Toaplan Version 1 arcade hardware for [**MiSTerFPGA**](h
 
 The intent is for this core to be a 1:1 implementation of Toaplan V1 hardware. Currently in beta state, this core is in active development with assistance from [**atrac17**](https://github.com/atrac17).
 
-![rbcore_github](https://github.com/va7deo/rallybike/assets/32810066/231319e6-2be6-49c4-a80a-9125241dddfb)
+Horror Story / Demon's World (TP-016), Tatsujin (TP-013B), Hellfire (TP-014), Zero Wing (TP-015), OutZone (TP-018), Vimana (TP-019), and Same! Same! Same! (TP-017) are also Toaplan V1 titles. Separate repositories located [**here**](https://github.com/va7deo?tab=repositories).
+
+![toaplan_template](https://github.com/va7deo/rallybike/assets/32810066/5b4f447d-5563-431a-9011-d5ca3b8ef7f7)
 
 ## Supported Titles
 
-| Title                                                                   | PCB<br>Number | Status      | Released | ROM Set     |
-|-------------------------------------------------------------------------|---------------|-------------|----------|-------------|
-| [**Dash Yarou / Rally Bike**](https://en.wikipedia.org/wiki/Rally_Bike) | TP-012        | Implemented | No       | .254 merged |
+| Title                                                                   | PCB<br>Number | Status      | Released |
+|-------------------------------------------------------------------------|---------------|-------------|----------|
+| [**Dash Yarou / Rally Bike**](https://en.wikipedia.org/wiki/Rally_Bike) | TP-012        | Implemented | Yes      |
 
 ## External Modules
 
@@ -34,7 +36,7 @@ The intent is for this core to be a 1:1 implementation of Toaplan V1 hardware. C
 
 | H-Sync       | V-Sync      | Source    | PCB<br>Number |
 |--------------|-------------|-----------|---------------|
-| 15.556938kHz | 55.161153Hz | DSLogic + | TP-012        |
+| 15.556938kHz | 55.161153Hz | ADALM2000 | TP-012        |
 
 ### Crystal Oscillators
 
@@ -47,7 +49,7 @@ The intent is for this core to be a 1:1 implementation of Toaplan V1 hardware. C
 
 **Estimated geometry:**
 
-_(Dash Yarou)_
+_(Dash Yarou / Rally Bike)_
 
     450 pixels/line  
   
@@ -87,7 +89,7 @@ _(Dash Yarou)_
 
 ### Audio Options
 
-- There is a toggle to disable playback of OPL2 audio.
+- There is a toggle to adjust the gain and disable playback of OPL2 audio.
 
 ### Overclock Options
 
@@ -111,7 +113,7 @@ _(Dash Yarou)_
 
 | Title            | Joystick | Service Menu                                                                                               | Dip Switches                                                                                              | Shared Controls | Dip Default | PCB Information |
 |------------------|----------|------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|-----------------|-------------|-----------------|
-| **Dash Yarou** | 8-Way    | [**Service Menu**](https://github.com/va7deo/rallybike/assets/32810066/e9eb65dd-17db-4bc5-8389-1da235419b0c) | [**Dip Sheet**](https://github.com/va7deo/rallybike/assets/32810066/528ca930-ce88-49b5-9530-bf70c9ae004e) | No              | N/A         | WIP             |
+| **Dash Yarou** | 8-Way    | [**Service Menu**](FILLME) | [**Dip Sheet**](FILLME) | Turn Based              | Upright         | WIP             |
 
 <br>
 
