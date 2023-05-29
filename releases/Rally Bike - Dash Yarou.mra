@@ -25,7 +25,7 @@
     <dip name="Continue Play" bits="15" ids="Yes,No"/>
   </switches>
 
-    <buttons names="Accelerator,Brake,Throttle/Accelerator,Slow Scroll,P1 Start,P2 Start,Coin A,Coin B,Pause" default="A,B,X,Y,R,Start,L"/>
+    <buttons names="Accelerator,Brake,-,Slow Scroll,P1 Start,P2 Start,Coin A,Coin B,Pause" default="A,B,X,Y,R,L,Start,Select"/>
 
     <rom index="0" zip="rallybik.zip" md5="None">
         <!-- maincpu - starts at 0x0 -->

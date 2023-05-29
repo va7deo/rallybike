@@ -342,20 +342,14 @@ reg [7:0] system;
 
 always @ (posedge clk_sys ) begin
     debug_buttons <= status[32];
-
+    p1        <= { 1'b0, p1_buttons[2:0], p1_right, p1_left, p1_down, p1_up };
+    p2        <= { 1'b0, p2_buttons[2:0], p2_right, p2_left, p2_down, p2_up };
+    z80_dswa  <= sw[0];
+    z80_dswb  <= sw[1];
+    z80_tjump <= sw[2];
     if ( status[32] == 1 ) begin
-        p1        <= { 1'b0, p1_up | p1_buttons[2], p1_buttons[1:0], p1_right, p1_left, p1_down, p1_up };
-        p2        <= { 1'b0, p2_up | p1_buttons[2], p2_buttons[1:0], p2_right, p2_left, p2_down, p2_up };
-        z80_dswa  <= { sw[1][7:3], sw[1][2] | status[32], sw[0][1:0] };
-        z80_dswb  <= sw[1];
-        z80_tjump <= sw[2];
         system    <= { vbl, start2 | p1_buttons[3], start1 | p1_buttons[3], coin_b, coin_a, service | status[32], key_tilt, key_service };
     end else begin
-        p1        <= { 1'b0, p1_buttons[2:0], p1_right, p1_left, p1_down, p1_up };
-        p2        <= { 1'b0, p2_buttons[2:0], p2_right, p2_left, p2_down, p2_up };
-        z80_dswa  <= sw[0];
-        z80_dswb  <= sw[1];
-        z80_tjump <= sw[2];
         system    <= { vbl, start2, start1, coin_b, coin_a, service, key_tilt, key_service };
     end
 end
@@ -382,17 +376,17 @@ reg b_pause;
 reg service;
 
 always @ * begin
-        p2_right   <= joy0[0]   | key_p1_right;
-        p2_left    <= joy0[1]   | key_p1_left;
-        p2_down    <= joy0[2]   | key_p1_down;
-        p2_up      <= joy0[3]   | key_p1_up;
-        p2_buttons <= joy0[7:4] | {key_p1_c, key_p1_b, key_p1_a};
+        p1_right   <= joy0[0]   | key_p2_right;
+        p1_left    <= joy0[1]   | key_p2_left;
+        p1_down    <= joy0[2]   | key_p2_down;
+        p1_up      <= joy0[3]   | key_p2_up;
+        p1_buttons <= joy0[7:4] | {key_p2_c, key_p2_b, key_p2_a};
 
-        p1_right   <= joy1[0]   | key_p2_right;
-        p1_left    <= joy1[1]   | key_p2_left;
-        p1_down    <= joy1[2]   | key_p2_down;
-        p1_up      <= joy1[3]   | key_p2_up;
-        p1_buttons <= joy1[7:4] | {key_p2_c, key_p2_b, key_p2_a};
+        p2_right   <= joy1[0]   | key_p1_right;
+        p2_left    <= joy1[1]   | key_p1_left;
+        p2_down    <= joy1[2]   | key_p1_down;
+        p2_up      <= joy1[3]   | key_p1_up;
+        p2_buttons <= joy1[7:4] | {key_p1_c, key_p1_b, key_p1_a};
 end
 
 always @ * begin
@@ -845,8 +839,6 @@ jtopl #(.OPL_TYPE(2)) jtopl2
     .sample(opl_sample_clk)
 );
 
-wire       audio_en   = status[11];       // audio enable
-
 wire [1:0] opl2_level = status[44:43];    // opl2 audio mix
 
 reg  [7:0] opl2_mult;
@@ -886,8 +878,11 @@ jtframe_mixer #(.W0(16), .WOUT(16)) u_mix_mono(
     .peak   (              )
 );
 
-always @ * begin
-    if ( audio_en == 0 ) begin
+reg audio_en;    // audio enable
+
+always @ (posedge clk_sys ) begin
+    audio_en <= status[11];
+    if ( audio_en == 1 && pause_cpu == 0 ) begin
         // mix audio
         AUDIO_L <= mono;
         AUDIO_R <= mono;
@@ -946,10 +941,6 @@ wire sprite_ofs_cs;
 wire sprite_cs; // *** offset needs to be auto-incremented
 wire sprite_size_cs; // *** offset needs to be auto-incremented
 wire sprite_ram_cs;
-
-wire dsp_ctrl_cs;
-//TMS32010 mapping may not be necessary here or the chipselect
-//wire dsp_rom_1_cs;    // map(0x000, 0x7ff).rom();
 
 wire z80_p1_cs;
 wire z80_p2_cs;
@@ -1406,9 +1397,8 @@ always @ (posedge clk_sys) begin
             // sprite_attr_addr valid
             sprite_attr_w <= 1;
             sprite_copy_state <= 2;
-        end else if ( sprite_copy_state == 2 ) begin        
+        end else if ( sprite_copy_state == 2 ) begin
             // sprite_attr_dout valid and write enabled
-            
             sprite_attr_addr <= sprite_attr_addr + 1;
             // wait for read from source
             if ( sprite_attr_addr == 11'h7ff ) begin
@@ -1423,7 +1413,6 @@ always @ (posedge clk_sys) begin
                 sprite_copy_state <= 0;
             end
         end
-        
         // tile state machine
         if ( draw_state == 0 && vc == ({ crtc[2][7:0], 1'b1 } - (status[19] ? (vtotal_282_flag ? 5'd19 : 4'd7) : 3'd0)) ) begin // 282 Lines standard (263 Lines for 60Hz)
             layer <= 4; // layer 4 is layer 0 but draws hidden and transparent
@@ -1756,10 +1745,10 @@ dual_port_ram #(.LEN(2048), .DATA_WIDTH(16)) spritebuf_ram
     .q_b( spritebuf_attr_dout )
 );
 
-    
+
 reg  [15:0] sprite_rom_addr ;
 wire [31:0] sprite_rom_dout ;
-    
+
 wire sprite_rom_w = ioctl_download & ioctl_wr & ( ioctl_index == 0 );
 
 wire sbit0 = (ioctl_addr >= 24'h180000 && ioctl_addr < 24'h190000 );
@@ -1944,7 +1933,7 @@ rom_controller rom_controller
     .sdram_ack(sdram_ack),
     .sdram_valid(sdram_valid),
     .sdram_q(sdram_q)
-  );
+);
 
 
 cache prog_cache
