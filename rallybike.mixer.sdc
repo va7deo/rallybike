@@ -1,4 +1,4 @@
-## Generated SDC file "rallybike.sdc"
+## Generated SDC file "rallybike.mixer.sdc"
 
 ## Copyright (C) 2020  Intel Corporation. All rights reserved.
 ## Your use of Intel Corporation's design tools, logic functions 

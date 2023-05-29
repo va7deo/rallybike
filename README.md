@@ -5,13 +5,15 @@ FPGA compatible core of Toaplan Version 1 arcade hardware for [**MiSTerFPGA**](h
 
 The intent is for this core to be a 1:1 implementation of Toaplan V1 hardware. Currently in beta state, this core is in active development with assistance from [**atrac17**](https://github.com/atrac17).
 
-![rbcore_github](https://github.com/va7deo/rallybike/assets/32810066/231319e6-2be6-49c4-a80a-9125241dddfb)
+Horror Story / Demon's World (TP-016), Tatsujin (TP-013B), Hellfire (TP-014), Zero Wing (TP-015), OutZone (TP-018), Vimana (TP-019), and Same! Same! Same! (TP-017) are also Toaplan V1 titles. Separate repositories located [**here**](https://github.com/va7deo?tab=repositories).
+
+
 
 ## Supported Titles
 
-| Title                                                                   | PCB<br>Number | Status      | Released | ROM Set     |
-|-------------------------------------------------------------------------|---------------|-------------|----------|-------------|
-| [**Dash Yarou / Rally Bike**](https://en.wikipedia.org/wiki/Rally_Bike) | TP-012        | Implemented | No       | .254 merged |
+| Title                                                                   | PCB<br>Number | Status      | Released |
+|-------------------------------------------------------------------------|---------------|-------------|----------|
+| [**Dash Yarou / Rally Bike**](https://en.wikipedia.org/wiki/Rally_Bike) | TP-012        | Implemented | Yes      |
 
 ## External Modules
 
@@ -34,7 +36,7 @@ The intent is for this core to be a 1:1 implementation of Toaplan V1 hardware. C
 
 | H-Sync       | V-Sync      | Source    | PCB<br>Number |
 |--------------|-------------|-----------|---------------|
-| 15.556938kHz | 55.161153Hz | DSLogic + | TP-012        |
+| 15.556938kHz | 55.161153Hz | ADALM2000 | TP-012        |
 
 ### Crystal Oscillators
 
@@ -47,7 +49,7 @@ The intent is for this core to be a 1:1 implementation of Toaplan V1 hardware. C
 
 **Estimated geometry:**
 
-_(Dash Yarou)_
+_(Dash Yarou / Rally Bike)_
 
     450 pixels/line  
   
@@ -81,13 +83,9 @@ _(Dash Yarou)_
 | 15.56kHz / 55.2Hz | TP-016               | 450    | 282    |
 | 15.73kHz / 59.8Hz | NTSC                 | 445    | 264    |
 
-### P1/P2 Input Swap Option
-
-- There is a toggle to swap inputs from Player 1 to Player 2. This only swaps inputs for the joystick, it does not effect keyboard inputs.
-
 ### Audio Options
 
-- There is a toggle to disable playback of OPL2 audio.
+- There is a toggle to adjust the gain and disable playback of OPL2 audio.
 
 ### Overclock Options
 
@@ -105,13 +103,17 @@ _(Dash Yarou)_
 
 - Additional toggle to enable the scandoubler without changing ini settings and new scanline option for 100% is available, this draws a black line every other frame. Below is an example.
 
-<table><tr><th>Scandoubler Fx</th><th>Scanlines 25%</th><th>Scanlines 50%</th><th>Scanlines 75%</th><th>Scanlines 100%</th><tr><td><br> <p align="center"><img width="120" height="160" src="FILLME"></td><td><br> <p align="center"><img width="120" height="160" src="FILLME"></td><td><br> <p align="center"><img width="120" height="160" src="FILLME"></td><td><br> <p align="center"><img width="120" height="160" src="FILLME"></td><td><br> <p align="center"><img width="120" height="160" src="FILLME"></td></tr></table> <br>
+<table><tr><th>Scandoubler Fx</th><th>Scanlines 25%</th><th>Scanlines 50%</th><th>Scanlines 75%</th><th>Scanlines 100%</th><tr><td><br> <p align="center"><img width="120" height="160" src="FILLME"></td><td><br> <p align="center"><img width="120" height="160" src="FILLME"></td><td><br> <p align="center"><img width="120" height="160" src="FILLME"></td><td><br> <p align="center"><img width="120" height="160" src="FILLME"></td><td><br> <p align="center"><img width="120" height="160" src="FILLME"></td></tr></table>
+
+### Scroll Debug / Level Skip Option
+
+- There is a toggle to enable the third button for "Slow Scroll" in Dash Yarou. You can also skip the level by pressing buttons 1 and 2 simultaneously. See the "PCB Information" section for further information.
 
 # PCB Information / Control Layout
 
 | Title            | Joystick | Service Menu                                                                                               | Dip Switches                                                                                              | Shared Controls | Dip Default | PCB Information |
 |------------------|----------|------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|-----------------|-------------|-----------------|
-| **Dash Yarou** | 8-Way    | [**Service Menu**](https://github.com/va7deo/rallybike/assets/32810066/e9eb65dd-17db-4bc5-8389-1da235419b0c) | [**Dip Sheet**](https://github.com/va7deo/rallybike/assets/32810066/528ca930-ce88-49b5-9530-bf70c9ae004e) | No              | N/A         | WIP             |
+| **Dash Yarou** | 8-Way    | [**Service Menu**](FILLME) | [**Dip Sheet**](FILLME) | Turn Based              | Upright         | When the "Table Type" dipswitch is toggled to "Upright", Player 1 and Player 2 joystick and buttons are active on the same controller. <br><br> Enabling the "No Death/Stop" dipswitch enables in-game pause by pressing P2 Start; pressing P2 Start returns to game. There is a slow motion debug setting; press P1 and P2 Start simultaneously. The kill player / level skip button combination is button 1 / 2. <br><br> These are mappable inputs. For ease of use, these features are enabled when toggling "Scroll Debug" in the core settings; there is no need to toggle the dipswitch. <br><br> The "Slow Scroll" button (P1/P2 Button 3) is not on hardware; P1 and P2 Start are merged to button 3. |
 
 <br>
 

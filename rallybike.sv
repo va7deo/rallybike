@@ -163,9 +163,9 @@ module emu
     input         UART_DSR,
 
 `ifdef MISTER_ENABLE_YC
-	output [39:0] CHROMA_PHASE_INC,
-	output        YC_EN,
-	output        PALFLAG,
+    output [39:0] CHROMA_PHASE_INC,
+    output        YC_EN,
+    output        PALFLAG,
 `endif
 
     // Open-drain User port.
@@ -186,7 +186,7 @@ assign USER_OUT = 0;
 assign {UART_RTS, UART_TXD, UART_DTR} = 0;
 assign {SD_SCK, SD_MOSI, SD_CS} = 'Z;
 //assign {SDRAM_DQ, SDRAM_A, SDRAM_BA, SDRAM_CLK, SDRAM_CKE, SDRAM_DQML, SDRAM_DQMH, SDRAM_nWE, SDRAM_nCAS, SDRAM_nRAS, SDRAM_nCS} = 'Z;
-//assign {DDRAM_CLK, DDRAM_BURSTCNT, DDRAM_ADDR, DDRAM_DIN, DDRAM_BE, DDRAM_RD, DDRAM_WE} = '0;  
+//assign {DDRAM_CLK, DDRAM_BURSTCNT, DDRAM_ADDR, DDRAM_DIN, DDRAM_BE, DDRAM_RD, DDRAM_WE} = '0;
 assign VGA_F1 = 0;
 assign VGA_SCALER = 0;
 assign HDMI_FREEZE = 0;
@@ -202,14 +202,13 @@ assign BUTTONS = 0;
 // 0         1         2         3          4         5         6   
 // 01234567890123456789012345678901 23456789012345678901234567890123
 // 0123456789ABCDEFGHIJKLMNOPQRSTUV 0123456789ABCDEFGHIJKLMNOPQRSTUV
-// X  XXXXXXXX  XX    X X XXXXXXXX                          XXXXXXXX
+// X  XXXXXXXX XX     X X XXXXXXXX  X          XX           XXXXXXXX
 
 wire [1:0] aspect_ratio = status[9:8];
 wire       orientation  = ~status[3];
 wire [2:0] scan_lines   = status[6:4];
 reg        refresh_mod;
 reg        new_vmode;
-wire       sound_on     = status[11];
 
 always @(posedge clk_sys) begin
     if (refresh_mod != status[19]) begin
@@ -228,7 +227,7 @@ assign VIDEO_ARY = (!aspect_ratio) ? (orientation  ? 8'd3 : 8'd4) : 12'd0;
 
 `include "build_id.v" 
 localparam CONF_STR = {
-    "Rally Bike;;",
+    "Toaplan V1;;",
     "-;",
     "P1,Video Settings;",
     "P1-;",
@@ -240,7 +239,7 @@ localparam CONF_STR = {
     "P1-;",
     "P1O7,Video Mode,NTSC,PAL;",
     "P1OM,Video Signal,RGBS/YPbPr,Y/C;",
-    "P1OJ,Video Timing,RGBS,CVBS-Y/C;",
+    "P1OJ,Refresh Rate,Native,NTSC;",
     "P1-;",
     "P1OOR,H-sync Pos Adj,0,1,2,3,4,5,6,7,-8,-7,-6,-5,-4,-3,-2,-1;",
     "P1OSV,V-sync Pos Adj,0,1,2,3,4,5,6,7,-8,-7,-6,-5,-4,-3,-2,-1;",
@@ -250,30 +249,28 @@ localparam CONF_STR = {
     "P1-;",
     "P2,Audio Settings;",
     "P2-;",
-    "P2OB,OPL2 Audio,On,Off;",
+    "P2oBC,OPL2 Volume,Default,50%,25%,0%;",
     "P2-;",
-    "P3,Core Settings;",
-    "P3-;",
-    "P3OE,Service Menu,Off,On;",
+    "-;",
+    "P3,Core Options;",
     "P3-;",
     "P3OF,68k Freq.,10Mhz,17.5MHz;",
     "P3-;",
-    "P3OK,Pause OSD,Off,When Open;",
-    "P3OL,Dim Video,Off,10s;",
+    "P3o0,Scroll Debug,Off,On;",
     "P3-;",
-    "-;",
     "DIP;",
     "-;",
+    "OK,Pause OSD,Off,When Open;",
+    "OL,Dim Video,Off,10s;",
+    "-;",
     "R0,Reset;",
-    "J1,Button 1,Button 2,Button 3,Start,Coin,Pause;",
-    "jn,A,B,X,R,L,Start;", // name mapping
     "V,v",`BUILD_DATE
 };
 
 wire hps_forced_scandoubler;
 wire forced_scandoubler = hps_forced_scandoubler | status[10];
 
-wire  [1:0] buttons;
+wire  [2:0] buttons;
 wire [63:0] status;
 wire [10:0] ps2_key;
 wire [15:0] joy0, joy1;
@@ -336,33 +333,46 @@ wire [21:0] gamma_bus;
 
 //<buttons names="Fire,Jump,Start,Coin,Pause" default="A,B,R,L,Start" />
 // Inputs tied to z80_din
-reg [15:0] p1;
-reg [15:0] p2;
-reg [15:0] z80_dswa;
-reg [15:0] z80_dswb;
-reg [15:0] z80_tjump;
-reg [15:0] system;
+reg [7:0] p1;
+reg [7:0] p2;
+reg [7:0] z80_dswa;
+reg [7:0] z80_dswb;
+reg [7:0] z80_tjump;
+reg [7:0] system;
 
 always @ (posedge clk_sys ) begin
-    p1        <= { 1'b0, p1_buttons[2:0], p1_right, p1_left, p1_down, p1_up };
-    p2        <= { 1'b0, p2_buttons[2:0], p2_right, p2_left, p2_down, p2_up };
-    z80_dswa  <= sw[0];
-    z80_dswb  <= sw[1];
-    z80_tjump <= sw[2];
-    system    <= { vbl, start2, start1, coin_b, coin_a, service, key_tilt, key_service };
+    debug_buttons <= status[32];
+
+    if ( status[32] == 1 ) begin
+        p1        <= { 1'b0, p1_up | p1_buttons[2], p1_buttons[1:0], p1_right, p1_left, p1_down, p1_up };
+        p2        <= { 1'b0, p2_up | p1_buttons[2], p2_buttons[1:0], p2_right, p2_left, p2_down, p2_up };
+        z80_dswa  <= { sw[1][7:3], sw[1][2] | status[32], sw[0][1:0] };
+        z80_dswb  <= sw[1];
+        z80_tjump <= sw[2];
+        system    <= { vbl, start2 | p1_buttons[3], start1 | p1_buttons[3], coin_b, coin_a, service | status[32], key_tilt, key_service };
+    end else begin
+        p1        <= { 1'b0, p1_buttons[2:0], p1_right, p1_left, p1_down, p1_up };
+        p2        <= { 1'b0, p2_buttons[2:0], p2_right, p2_left, p2_down, p2_up };
+        z80_dswa  <= sw[0];
+        z80_dswb  <= sw[1];
+        z80_tjump <= sw[2];
+        system    <= { vbl, start2, start1, coin_b, coin_a, service, key_tilt, key_service };
+    end
 end
+
+reg        debug_buttons;
 
 reg        p1_right;
 reg        p1_left;
 reg        p1_down;
 reg        p1_up;
-reg [2:0]  p1_buttons;
+reg [3:0]  p1_buttons;
 
 reg        p2_right;
 reg        p2_left;
 reg        p2_down;
 reg        p2_up;
-reg [2:0]  p2_buttons;
+reg [3:0]  p2_buttons;
 
 reg start1;
 reg start2;
@@ -372,24 +382,28 @@ reg b_pause;
 reg service;
 
 always @ * begin
-    p1_right   <= joy0[0]   | key_p1_right;
-    p1_left    <= joy0[1]   | key_p1_left;
-    p1_down    <= joy0[2]   | key_p1_down;
-    p1_up      <= joy0[3]   | key_p1_up;
-    p1_buttons <= joy0[6:4] | {key_p1_c, key_p1_b, key_p1_a};
+        p2_right   <= joy0[0]   | key_p1_right;
+        p2_left    <= joy0[1]   | key_p1_left;
+        p2_down    <= joy0[2]   | key_p1_down;
+        p2_up      <= joy0[3]   | key_p1_up;
+        p2_buttons <= joy0[7:4] | {key_p1_c, key_p1_b, key_p1_a};
 
-    p2_right   <= joy1[0]   | key_p2_right;
-    p2_left    <= joy1[1]   | key_p2_left;
-    p2_down    <= joy1[2]   | key_p2_down;
-    p2_up      <= joy1[3]   | key_p2_up;
-    p2_buttons <= joy1[6:4] | {key_p2_c, key_p2_b, key_p2_a};
+        p1_right   <= joy1[0]   | key_p2_right;
+        p1_left    <= joy1[1]   | key_p2_left;
+        p1_down    <= joy1[2]   | key_p2_down;
+        p1_up      <= joy1[3]   | key_p2_up;
+        p1_buttons <= joy1[7:4] | {key_p2_c, key_p2_b, key_p2_a};
+end
 
-    start1    <= joy0[7]  | joy1[7]  | key_start_1p;
-    start2    <= joy0[8]  | joy1[8]  | key_start_2p;
-    coin_a    <= joy0[9]  | joy1[9]  | key_coin_a;
-    coin_b    <= joy0[10] | joy1[10] | key_coin_b;
-    b_pause   <= joy0[11] | key_pause;
-    service   <= key_test | status[14];
+always @ * begin
+        start1    <= joy0[8]  | joy1[8]  | key_start_1p;
+        start2    <= joy0[9]  | joy1[9]  | key_start_2p;
+
+        coin_a    <= joy0[10] | joy1[10] | key_coin_a;
+        coin_b    <= joy0[11] | joy1[11] | key_coin_b;
+
+        b_pause   <= joy0[12] | key_pause;
+        service   <= key_test;
 end
 
 // Keyboard handler
@@ -550,7 +564,7 @@ video_timing video_timing (
     .vbl(vbl),
     .hsync(hsync),
     .vsync(vsync)
-    );
+);
 
 // PAUSE SYSTEM
 wire    pause_cpu;
@@ -593,7 +607,8 @@ arcade_video #(320,24) arcade_video
         .fx(scan_lines)
 );
 
-/*     Phase Accumulator Increments (Fractional Size 32, look up size 8 bit, total 40 bits)
+/*
+    Phase Accumulator Increments (Fractional Size 32, look up size 8 bit, total 40 bits)
     Increment Calculation - (Output Clock * 2 ^ Word Size) / Reference Clock
     Example
     NTSC = 3.579545
@@ -601,12 +616,11 @@ arcade_video #(320,24) arcade_video
     W = 40 ( 32 bit fraction, 8 bit look up reference)
     Ref CLK = 42.954544 (This could us any clock)
     NTSC_Inc = 3.579545333 * 2 ^ 40 / 96 = 40997413706
-    
 */
 
 // SET PAL and NTSC TIMING
 `ifdef MISTER_ENABLE_YC
-    assign CHROMA_PHASE_INC = PALFLAG ? 40'd56225172000: 40'd56225172000;
+    assign CHROMA_PHASE_INC = PALFLAG ? 40'd56225080500: 40'd56225080500;
     assign YC_EN =  status[22];
     assign PALFLAG = status[7];
 `endif
@@ -706,7 +720,7 @@ fx68k fx68k (
     .BERRn(1'b1),
     .BRn(1'b1),
     .BGACKn(1'b1),
-    
+
     .IPL0n(1'b1),
     .IPL1n(1'b1),
     .IPL2n(ipl2_n),
@@ -736,7 +750,7 @@ always @ (posedge clk_sys) begin
             tile_num_cs ? cpu_tile_dout_num :
             frame_done_cs ? { 16 { vbl } } : // get vblank state
             vblank_cs ? { 15'b0, vbl } :
-            16'hffff ;
+            16'hffff;
     end
 end
 
@@ -821,9 +835,6 @@ jtopl #(.OPL_TYPE(2)) jtopl2
     .rst(~reset_n),
     .clk(clk_sys),
     .cen(clk_3_5M),
-    
-//    .clk(clk_3_5M),
-//    .cen('1),
     .din(sound_data),
     .addr(sound_addr),
     .cs_n('0),
@@ -834,10 +845,52 @@ jtopl #(.OPL_TYPE(2)) jtopl2
     .sample(opl_sample_clk)
 );
 
-always @ (posedge opl_sample_clk) begin
-    if ( sound_on == 0 ) begin
-        AUDIO_L <= sample;
-        AUDIO_R <= sample;
+wire       audio_en   = status[11];       // audio enable
+
+wire [1:0] opl2_level = status[44:43];    // opl2 audio mix
+
+reg  [7:0] opl2_mult;
+
+// set the multiplier for each channel from menu
+
+always @( posedge clk_sys, posedge reset ) begin
+    if (reset) begin
+        opl2_mult<=0;
+    end else begin
+    case( opl2_level )
+        0: opl2_mult <= 8'h0c;    // 75%
+        1: opl2_mult <= 8'h08;    // 50%
+        2: opl2_mult <= 8'h04;    // 25%
+        3: opl2_mult <= 8'h00;    // 0%
+    endcase
+    end
+end
+
+wire signed [15:0] mono;
+
+jtframe_mixer #(.W0(16), .WOUT(16)) u_mix_mono(
+    .rst    ( reset        ),
+    .clk    ( clk_sys      ),
+    .cen    ( 1'b1         ),
+    // input signals
+    .ch0    ( sample       ),
+    .ch1    ( 16'd0        ),
+    .ch2    ( 16'd0        ),
+    .ch3    ( 16'd0        ),
+    // gain for each channel in 4.4 fixed point format
+    .gain0  ( opl2_mult    ),
+    .gain1  ( 8'd0         ),
+    .gain2  ( 8'd0         ),
+    .gain3  ( 8'd0         ),
+    .mixed  ( mono         ),
+    .peak   (              )
+);
+
+always @ * begin
+    if ( audio_en == 0 ) begin
+        // mix audio
+        AUDIO_L <= mono;
+        AUDIO_R <= mono;
     end else begin
         AUDIO_L <= 0;
         AUDIO_R <= 0;
@@ -964,7 +1017,6 @@ always @ (posedge clk_sys) begin
         end else begin
             reset_z80_n = 1;
         end
-
         // write asserted and rising cpu clock
         if (  clk_10M == 1 && cpu_rw == 0 ) begin
             if ( tile_ofs_cs ) begin
@@ -1010,7 +1062,7 @@ always @ (posedge clk_sys) begin
                 inc_sprite_ofs <= 1;
             end
             if ( reset_z80_cs ) begin
-                // the pcb writes to a latch to control the reset 
+                // the pcb writes to a latch to control the reset
                 if ( cpu_dout == 0 ) begin
                     reset_z80_n <= 0;
                     reset_counter <= 8'h3f;
@@ -1086,8 +1138,8 @@ dual_port_ram #(.LEN(1024), .DATA_WIDTH(16)) tile_line_buffer (
     .wren_b ( 0 ),
 //    .data_b ( ),
     .q_b ( tile_fb_out )
-    );
-    
+);
+
 dual_port_ram #(.LEN(1024), .DATA_WIDTH(16)) sprite_line_buffer (
     .clock_a ( clk_sys ),
     .address_a ( sprite_fb_addr_w ),
@@ -1100,7 +1152,7 @@ dual_port_ram #(.LEN(1024), .DATA_WIDTH(16)) sprite_line_buffer (
     .wren_b ( 0 ),
 //    .data_b ( ),
     .q_b ( sprite_fb_out )
-    );
+);
 
 reg [9:0] x_ofs;
 reg [9:0] x;
@@ -1168,11 +1220,39 @@ reg   [9:0] sprite_y;
 
 reg   [7:0] sprite_buf_num;
 
-reg  [10:0] sprite_index    ;//= sprite_attr_dout[10:0] ;
-reg   [5:0] sprite_pal_addr ;//= sprite_attr_dout[5:0] ;
-reg   [1:0] sprite_priority ;//= sprite_attr_dout[11:10] ;
-reg   [9:0] sprite_pos_x    ;//= sprite_attr_dout[15:7] ;
-reg   [9:0] sprite_pos_y    ;//= sprite_attr_dout[15:7] ;
+
+reg   [1:0] vtotal_282_flag;
+
+always @ (posedge clk_sys) begin // Check System Vcount flag for 60Hz mode
+    if ({crtc[2][7:0], 1'b1 } == 269)
+        vtotal_282_flag <= 0;
+    else
+        vtotal_282_flag <= 1;
+end
+
+// SCU controller. Sprite RAM format  (Rally Bike)
+//
+//  0         1         2         3
+//  ---- -sss ssss ssss ---- ---- ---- ---- = Sprite number (0 - $7FF)
+//  ---- ---- ---- ---- ---- ---- --cc cccc = Color (0 - $3F)
+//  ---- ---- ---- ---- ---- ---x ---- ---- = Flip X
+//  ---- ---- ---- ---- ---- --y- ---- ---- = Flip Y
+//  ---- ---- ---- ---- ---- pp-- ---- ---- = Priority (0h,4h,8h,Ch (shifted < 2 places))
+//  ???? ?--- ---- ---- ???? ---- ??-- ---- = Unknown / Unused
+//
+//  4         5         6         7
+//  xxxx xxxx x--- ---- ---- ---- ---- ---- = X position
+//  ---- ---- ---- ---- yyyy yyyy y--- ---- = Y position
+//  ---- ---- -??? ???? ---- ---- -??? ???? = Unknown
+
+//reg  [10:0] sprite_attr_addr;
+//wire [15:0] sprite_attr_dout;
+
+reg  [10:0] sprite_index   ;//= sprite_attr_dout[10:0];
+reg   [5:0] sprite_pal_addr;//= sprite_attr_dout[5:0];
+reg   [1:0] sprite_priority;//= sprite_attr_dout[11:10];
+reg   [9:0] sprite_pos_x   ;//= sprite_attr_dout[15:7];
+reg   [9:0] sprite_pos_y   ;//= sprite_attr_dout[15:7];
 
 always @ (posedge clk_sys) begin
     if ( reset == 1 ) begin
@@ -1204,10 +1284,8 @@ always @ (posedge clk_sys) begin
                 sprite_fb_w <= 0;
                 sprite_state <= 2;
             end
-            
-// sprite y could be read first so reading the rest 
+// sprite y could be read first so reading the rest
 // could be skipped if not in range of the current scanline
-
         end else if ( sprite_state == 2 ) begin
             // sprite num is valid now
             sprite_fb_w <= 0;
@@ -1236,7 +1314,7 @@ always @ (posedge clk_sys) begin
             // sprite y ready
             sprite_pos_y <= spritebuf_attr_dout[15:7] - 16;
             sprite_state <= 8;
-        end else if ( sprite_state == 8 ) begin            
+        end else if ( sprite_state == 8 ) begin
             // start loop
 //            sprite_rom_cs <= 0;
             sprite_fb_w <= 0;
@@ -1252,25 +1330,23 @@ always @ (posedge clk_sys) begin
                 sprite_state <= 15;
             end
         end else if ( sprite_state == 9 ) begin
-            sprite_rom_addr <= { sprite_index, sprite_y[3:0], sprite_x[3] } ;  // fix
+            sprite_rom_addr <= { sprite_index, sprite_y[3:0], sprite_x[3] };  // fix
             sprite_state <= 10;
         end else if ( sprite_state == 10 ) begin
             sprite_state <= 11;
-        end else if ( sprite_state == 11 ) begin        
+        end else if ( sprite_state == 11 ) begin
                 sprite_data <= sprite_rom_dout;
                 sprite_state <= 12;
         end else if ( sprite_state == 12 ) begin
             sprite_fb_w <= 0;
             // draw if pixel value not zero and priority >= previous sprite data
-            
             if ( sprite_pix > 0 && sprite_priority >= sprite_priority_buf[sprite_buf_x] ) begin 
                 sprite_fb_din <= { 2'b11, sprite_priority, 2'b00, sprite_pal_addr, sprite_pix };
                 
-                sprite_fb_addr_w <= { y[0], sprite_buf_x[8:0] } ;
+                sprite_fb_addr_w <= { y[0], sprite_buf_x[8:0] };
                 sprite_priority_buf[sprite_buf_x] <= sprite_priority;
                 sprite_fb_w <= 1;
             end
-            
             if ( sprite_x < 15 ) begin
                 sprite_x <= sprite_x + 1;
                 if ( sprite_x[2:0] == 7 ) begin
@@ -1286,13 +1362,10 @@ always @ (posedge clk_sys) begin
                 // tile state machine will reset sprite_state when line completes.
                 sprite_state <= 14; // done
             end
-        end else if ( sprite_state == 14 ) begin            
+        end else if ( sprite_state == 14 ) begin
             sprite_fb_w <= 0;
             sprite_state <= 15; // done
         end
-        
-        
-        
         // copy tile ram and scroll info
         // not sure if this is needed. need to check to see when tile ram is updated.
         if (  tile_copy_state == 0 && vc == 240  ) begin
@@ -1352,7 +1425,7 @@ always @ (posedge clk_sys) begin
         end
         
         // tile state machine
-        if ( draw_state == 0 && vc == { crtc[2][7:0], 1'b1 } ) begin
+        if ( draw_state == 0 && vc == ({ crtc[2][7:0], 1'b1 } - (status[19] ? (vtotal_282_flag ? 5'd19 : 4'd7) : 3'd0)) ) begin // 282 Lines standard (263 Lines for 60Hz)
             layer <= 4; // layer 4 is layer 0 but draws hidden and transparent
             y <= 0;
             draw_state <= 2;
@@ -1431,7 +1504,7 @@ always @ (posedge clk_sys) begin
                     if ( curr_x[2:0] == ( tile_flip ? 0 : 7)  ) begin
                         draw_state <= 3; 
                         tile_draw_state <= 0;
-                    end 
+                    end
                     x <= x + 1;
                 end else if ( layer > 0 ) begin
                     layer <= layer - 1;
@@ -1446,7 +1519,7 @@ always @ (posedge clk_sys) begin
                 // wait for next line or quit
                 if ( y == 239 ) begin
                     draw_state <= 0;
-                end else if ( hc ==  (status[19] ? 9'd444 : 9'd449) ) begin
+                end else if ( hc ==  (status[19] ? 9'd444 : 9'd449) ) begin // 450 Lines standard (445 Lines for NTSC standard 15.73kHz line freq)
                     y <= y + 1;
                     draw_state <= 2;
                     sprite_state <= 0;
@@ -1467,7 +1540,6 @@ reg draw_sprite;
 // [3:0] = tile colour index.
 
 // there are 10 70MHz cycles per pixel. clk7_count from 0-9
-// 
 
 // dac values based on 120 ohm driver for the resistor dac and 75 ohm output.  4.7k, 2.2k, 1k, 470, 220
 // modeled in spice
@@ -1480,7 +1552,6 @@ always @ (posedge clk_sys) begin
     end else if ( clk7_count == 6 ) begin
         // if palette index is zero then it's from layer 3 and is transparent render as blank (black).
         rgb <= { dac[tile_palette_dout[4:0]], dac[tile_palette_dout[9:5]], dac[tile_palette_dout[14:10]] };
-
         // if not transparent and sprite is higher priority 
         if ( sprite_fb_out[3:0] > 0 && (sprite_fb_out[13:10] >= tile_fb_out[13:10]) ) begin
             // draw sprite
@@ -1506,7 +1577,7 @@ dual_port_ram #(.LEN(16384), .DATA_WIDTH(32)) ram_tile_buf (
     .address_b ( tile[13:0] ),    // only read the tile # for now
     .wren_b ( 0 ),
     .q_b ( tile_buf_dout )
-    );
+);
 
 // tile attribute ram.  each tile attribute is 2 16bit words
 // pppp ---- --cc cccc httt tttt tttt tttt = Tile number (0 - $7fff)
@@ -1522,8 +1593,8 @@ dual_port_ram #(.LEN(16384), .DATA_WIDTH(16)) ram_tile_h (
     .address_b ( tile[13:0] ),    // only read the tile # for now
     .wren_b ( 0 ),
     .q_b ( tile_attr_dout[31:16] )
-    );
-    
+);
+
 dual_port_ram #(.LEN(16384), .DATA_WIDTH(16)) ram_tile_l (
     .clock_a ( clk_10M ),
     .address_a ( curr_tile_ofs ),
@@ -1535,7 +1606,7 @@ dual_port_ram #(.LEN(16384), .DATA_WIDTH(16)) ram_tile_l (
     .address_b ( tile[13:0] ),    // only read the tile # for now
     .wren_b ( 0 ),
     .q_b ( tile_attr_dout[15:0] )
-    );
+);
 
 // tiles  1024 15 bit values.  index is ( 6 bits from tile attribute, 4 bits from bitmap )
 // background palette ram low    
@@ -1551,7 +1622,7 @@ dual_port_ram #(.LEN(1024), .DATA_WIDTH(8)) tile_palram_l (
     .address_b ( tile_palette_addr ),
     .wren_b ( 0 ),
     .q_b ( tile_palette_dout[7:0] )
-    );
+);
 
 // background palette ram high
 dual_port_ram #(.LEN(1024), .DATA_WIDTH(8)) tile_palram_h (
@@ -1565,7 +1636,7 @@ dual_port_ram #(.LEN(1024), .DATA_WIDTH(8)) tile_palram_h (
     .address_b ( tile_palette_addr ),
     .wren_b ( 0 ),
     .q_b ( tile_palette_dout[15:8] )
-    );
+);
 
 // sprite palette ram low
 // does this need to be byte addressable?
@@ -1580,7 +1651,7 @@ dual_port_ram #(.LEN(1024), .DATA_WIDTH(8)) sprite_palram_l (
     .address_b ( sprite_palette_addr ),
     .wren_b ( 0 ),
     .q_b ( sprite_palette_dout[7:0] )
-    );
+);
 
 // background palette ram high
 dual_port_ram #(.LEN(1024), .DATA_WIDTH(8)) sprite_palram_h (
@@ -1594,7 +1665,7 @@ dual_port_ram #(.LEN(1024), .DATA_WIDTH(8)) sprite_palram_h (
     .address_b ( sprite_palette_addr ),
     .wren_b ( 0 ),
     .q_b ( sprite_palette_dout[15:8] )
-    );
+);
 
 
 // main 68k ram low
@@ -1604,7 +1675,7 @@ dual_port_ram #(.LEN(16384), .DATA_WIDTH(8))    ram16kx8_L (
     .wren_a ( !cpu_rw & ram_cs & !cpu_lds_n ),
     .data_a ( cpu_dout[7:0]  ),
     .q_a (  ram_dout[7:0] )
-    );
+);
 
 // main 68k ram high
 dual_port_ram #(.LEN(16384), .DATA_WIDTH(8))     ram16kx8_H (
@@ -1613,7 +1684,7 @@ dual_port_ram #(.LEN(16384), .DATA_WIDTH(8))     ram16kx8_H (
     .wren_a ( !cpu_rw & ram_cs & !cpu_uds_n ),
     .data_a ( cpu_dout[15:8]  ),
     .q_a (  ram_dout[15:8] )
-    );
+);
 
 
 //wire [15:0] z80_shared_addr = z80_addr - 16'h8000;
@@ -1633,7 +1704,7 @@ dual_port_ram #(.LEN(4096), .DATA_WIDTH(8))  shared_ram (
     .data_b ( z80_dout ),
     .wren_b ( sound_ram_1_cs & ~z80_wr_n ),
     .q_b ( z80_shared_dout )
-    );
+);
 
 reg         sprite_attr_w ;
 reg  [10:0] sprite_attr_addr;
@@ -1690,13 +1761,13 @@ reg  [15:0] sprite_rom_addr ;
 wire [31:0] sprite_rom_dout ;
     
 wire sprite_rom_w = ioctl_download & ioctl_wr & ( ioctl_index == 0 );
-       
-wire sbit0 = (ioctl_addr >= 24'h180000 && ioctl_addr < 24'h190000 ) ;
-wire sbit1 = (ioctl_addr >= 24'h190000 && ioctl_addr < 24'h1a0000 ) ;
-wire sbit2 = (ioctl_addr >= 24'h1a0000 && ioctl_addr < 24'h1b0000 ) ;
-wire sbit3 = (ioctl_addr >= 24'h1b0000 && ioctl_addr < 24'h1c0000 ) ;
 
-dual_port_ram #(.LEN(65536), .DATA_WIDTH(8)) sprite_rom_0 
+wire sbit0 = (ioctl_addr >= 24'h180000 && ioctl_addr < 24'h190000 );
+wire sbit1 = (ioctl_addr >= 24'h190000 && ioctl_addr < 24'h1a0000 );
+wire sbit2 = (ioctl_addr >= 24'h1a0000 && ioctl_addr < 24'h1b0000 );
+wire sbit3 = (ioctl_addr >= 24'h1b0000 && ioctl_addr < 24'h1c0000 );
+
+dual_port_ram #(.LEN(65536), .DATA_WIDTH(8)) sprite_rom_0
 (
     .clock_a( clk_sys ),
     .address_a( ioctl_addr[15:0] ),
@@ -1708,9 +1779,9 @@ dual_port_ram #(.LEN(65536), .DATA_WIDTH(8)) sprite_rom_0
     .address_b( sprite_rom_addr ),
     .wren_b( 0 ),
     .q_b( sprite_rom_dout[7:0] )
-    );    
+);
 
-dual_port_ram #(.LEN(65536), .DATA_WIDTH(8)) sprite_rom_1 
+dual_port_ram #(.LEN(65536), .DATA_WIDTH(8)) sprite_rom_1
 (
     .clock_a ( clk_sys ),
     .address_a ( ioctl_addr[15:0] ),
@@ -1722,9 +1793,9 @@ dual_port_ram #(.LEN(65536), .DATA_WIDTH(8)) sprite_rom_1
     .address_b ( sprite_rom_addr ),
     .wren_b ( 0 ),
     .q_b ( sprite_rom_dout[15:8] )
-    );    
+);
 
-dual_port_ram #(.LEN(65536), .DATA_WIDTH(8)) sprite_rom_2 
+dual_port_ram #(.LEN(65536), .DATA_WIDTH(8)) sprite_rom_2
 (
     .clock_a ( clk_sys ),
     .address_a ( ioctl_addr[15:0] ),
@@ -1736,7 +1807,7 @@ dual_port_ram #(.LEN(65536), .DATA_WIDTH(8)) sprite_rom_2
     .address_b ( sprite_rom_addr ),
     .wren_b ( 0 ),
     .q_b ( sprite_rom_dout[23:16] )
-    );    
+);
 
 dual_port_ram #(.LEN(65536), .DATA_WIDTH(8)) sprite_rom_3
 (
@@ -1750,7 +1821,7 @@ dual_port_ram #(.LEN(65536), .DATA_WIDTH(8)) sprite_rom_3
     .address_b ( sprite_rom_addr ),
     .wren_b ( 0 ),
     .q_b ( sprite_rom_dout[31:24] )
-    );    
+);
 
 reg  [22:0] sdram_addr;
 reg  [31:0] sdram_data;
@@ -1892,8 +1963,7 @@ cache prog_cache
     .rom_addr(prog_cache_addr),
     .rom_valid(prog_cache_valid),
     .rom_data(prog_cache_data)
-
-); 
+);
 
 tile_cache tile_cache
 (
@@ -1911,8 +1981,7 @@ tile_cache tile_cache
     .rom_addr(tile_cache_addr),
     .rom_data(tile_cache_data),
     .rom_valid(tile_cache_valid)
-
-); 
+);
 
 endmodule
 
