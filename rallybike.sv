@@ -316,12 +316,6 @@ always @(posedge clk_sys) begin
     end
 end
 
-always @(posedge clk_sys) begin
-    if (ioctl_wr && ioctl_index==1) begin
-        pcb <= ioctl_dout;
-    end
-end
-
 wire        direct_video;
 
 wire        ioctl_download;
@@ -334,20 +328,9 @@ wire [26:0] ioctl_addr;
 wire [15:0] ioctl_dout;
 wire [15:0] ioctl_din;
 
-reg   [7:0] pcb;
 wire        tile_priority_type;
 wire [15:0] scroll_y_offset;
 wire [15:0] scroll_x_offset = 30;
-
-localparam pcb_zero_wing     = 0;
-localparam pcb_out_zone_conv = 1;
-localparam pcb_out_zone      = 2;
-localparam pcb_hellfire      = 3;
-localparam pcb_truxton       = 4;
-localparam pcb_fireshark     = 5;
-localparam pcb_vimana        = 6;
-localparam pcb_rallybike     = 7;
-localparam pcb_demonwld      = 8;
 
 wire [21:0] gamma_bus;
 
@@ -1089,7 +1072,6 @@ reg  [15:0] sprite_fb_din;
 
 reg tile_fb_w;
 reg sprite_fb_w;
-reg sprite_buf_w;
 reg sprite_size_buf_w;
 
 dual_port_ram #(.LEN(1024), .DATA_WIDTH(16)) tile_line_buffer (
@@ -1178,37 +1160,13 @@ reg [31:0] tile_attr;
 // [9:4] = palette offset
 // [3:0] = tile colour index.
 
-reg [3:0] tile_priority_buf   [327:0];
-reg [3:0] sprite_priority_buf [327:0];
+reg   [3:0] tile_priority_buf   [327:0];
+reg   [3:0] sprite_priority_buf [327:0];
 
-reg  [9:0] sprite_x;         // offset from left side of sprite
-reg  [9:0] sprite_y;
+reg   [9:0] sprite_x;         // offset from left side of sprite
+reg   [9:0] sprite_y;
 
-//wire [14:0] sprite_index    = sprite_attr_0[10:0] ;
-//wire  [5:0] sprite_pal_addr = sprite_attr_1[5:0] ;
-//wire  [3:0] sprite_priority = sprite_attr_1[11:10] ;
-//wire  [9:0] sprite_pos_x    = sprite_attr_2[15:7] ;
-//wire  [9:0] sprite_pos_y    = sprite_attr_3[15:7] ;
-
-reg [7:0] sprite_buf_num;
-
-// SCU controller. Sprite RAM format  (Rally Bike)
-//
-//  0         1         2         3
-//  ---- -sss ssss ssss ---- ---- ---- ---- = Sprite number (0 - $7FF)
-//  ---- ---- ---- ---- ---- ---- --cc cccc = Color (0 - $3F)
-//  ---- ---- ---- ---- ---- ---x ---- ---- = Flip X
-//  ---- ---- ---- ---- ---- --y- ---- ---- = Flip Y
-//  ---- ---- ---- ---- ---- pp-- ---- ---- = Priority (0h,4h,8h,Ch (shifted < 2 places))
-//  ???? ?--- ---- ---- ???? ---- ??-- ---- = Unknown / Unused
-//
-//  4         5         6         7
-//  xxxx xxxx x--- ---- ---- ---- ---- ---- = X position
-//  ---- ---- ---- ---- yyyy yyyy y--- ---- = Y position
-//  ---- ---- -??? ???? ---- ---- -??? ???? = Unknown
-
-//reg  [10:0] sprite_attr_addr;
-//wire [15:0] sprite_attr_dout;
+reg   [7:0] sprite_buf_num;
 
 reg  [10:0] sprite_index    ;//= sprite_attr_dout[10:0] ;
 reg   [5:0] sprite_pal_addr ;//= sprite_attr_dout[5:0] ;
@@ -1253,30 +1211,30 @@ always @ (posedge clk_sys) begin
         end else if ( sprite_state == 2 ) begin
             // sprite num is valid now
             sprite_fb_w <= 0;
-            sprite_attr_addr <= { sprite_num, 2'b00 } ; // sprite num
+            spritebuf_attr_addr <= { sprite_num, 2'b00 } ; // sprite num
             sprite_state <= 3;
         end else if ( sprite_state == 3 ) begin
-            sprite_attr_addr <= { sprite_num, 2'b01 } ; // sprite colour / priority
+            spritebuf_attr_addr <= { sprite_num, 2'b01 } ; // sprite colour / priority
             sprite_state <= 4;
         end else if ( sprite_state == 4 ) begin
             // sprite num ready
-            sprite_attr_addr <= { sprite_num, 2'b10 } ; // sprite x pos
-            sprite_index <= sprite_attr_dout[10:0]; 
+            spritebuf_attr_addr <= { sprite_num, 2'b10 } ; // sprite x pos
+            sprite_index <= spritebuf_attr_dout[10:0]; 
             sprite_state <= 5;
         end else if ( sprite_state == 5 ) begin
             // sprite colour ready
-            sprite_attr_addr <= { sprite_num, 2'b11 } ; // sprite y pos        
+            spritebuf_attr_addr <= { sprite_num, 2'b11 } ; // sprite y pos        
             
-            sprite_pal_addr <= sprite_attr_dout[5:0] ;
-            sprite_priority <= sprite_attr_dout[11:10] ;
+            sprite_pal_addr <= spritebuf_attr_dout[5:0] ;
+            sprite_priority <= spritebuf_attr_dout[11:10] ;
             sprite_state <= 6;
         end else if ( sprite_state == 6 ) begin
             // sprite x ready
-            sprite_pos_x <= sprite_attr_dout[15:7] - 31;
+            sprite_pos_x <= spritebuf_attr_dout[15:7] - 31;
             sprite_state <= 7;
         end else if ( sprite_state == 7 ) begin
             // sprite y ready
-            sprite_pos_y <= sprite_attr_dout[15:7] - 16;
+            sprite_pos_y <= spritebuf_attr_dout[15:7] - 16;
             sprite_state <= 8;
         end else if ( sprite_state == 8 ) begin            
             // start loop
@@ -1306,8 +1264,6 @@ always @ (posedge clk_sys) begin
             // draw if pixel value not zero and priority >= previous sprite data
             
             if ( sprite_pix > 0 && sprite_priority >= sprite_priority_buf[sprite_buf_x] ) begin 
-//            if ( sprite_pix > 0 ) begin
-                //sprite_fb_din <= { 2'b11, sprite_priority, sprite_pal_addr, sprite_pix };
                 sprite_fb_din <= { 2'b11, sprite_priority, 2'b00, sprite_pal_addr, sprite_pix };
                 
                 sprite_fb_addr_w <= { y[0], sprite_buf_x[8:0] } ;
@@ -1339,7 +1295,7 @@ always @ (posedge clk_sys) begin
         
         // copy tile ram and scroll info
         // not sure if this is needed. need to check to see when tile ram is updated.
-        if (  tile_copy_state == 0 && vc == 256  ) begin
+        if (  tile_copy_state == 0 && vc == 240  ) begin
             tile_copy_state <= 1;
         end else begin
             // copy scroll registers
@@ -1353,22 +1309,46 @@ always @ (posedge clk_sys) begin
             scroll_y_latch[3] <= scroll_y[3] - scroll_ofs_y;
         end
         
+//dual_port_ram #(.LEN(2048), .DATA_WIDTH(16)) spritebuf_ram 
+//(
+//    .clock_a( clk_sys ),
+//    .address_a( sprite_attr_addr ),
+//    .wren_a( sprite_attr_w ),
+//    .data_a( sprite_attr_dout ),
+//    .q_a( ),
+//
+//    .clock_b( clk_sys ),
+//    .address_b( spritebuf_attr_addr ),
+//    .wren_b( 0 ),
+//    .q_b( spritebuf_attr_dout )
+//);      
+        
         // copy sprite attr/size to buffer
+        // write is delayed one clock
         if (  sprite_copy_state == 0 && vc == 240  ) begin
             sprite_copy_state <= 1;
-            sprite_buf_w <= 0;
-            sprite_num_copy <= 8'h00;
+            sprite_attr_w <= 0;
+            sprite_attr_addr <= 11'h000;
         end else if ( sprite_copy_state == 1 ) begin
-            sprite_num_copy <= sprite_num_copy + 1;
-            sprite_buf_num <= sprite_num_copy;
-            sprite_buf_w <= 1;
+            // sprite_attr_addr valid
+            sprite_attr_w <= 1;
+            sprite_copy_state <= 2;
+        end else if ( sprite_copy_state == 2 ) begin        
+            // sprite_attr_dout valid and write enabled
+            
+            sprite_attr_addr <= sprite_attr_addr + 1;
             // wait for read from source
-            if ( sprite_num_copy == 8'hff ) begin
-                sprite_copy_state <= 2;
+            if ( sprite_attr_addr == 11'h7ff ) begin
+                sprite_copy_state <= 3;
+            end else begin
+                sprite_copy_state <= 1;
             end
-        end else if ( sprite_copy_state == 2 ) begin
-            sprite_buf_w <= 0;
-            sprite_copy_state <= 0;
+        end else if ( sprite_copy_state == 3 ) begin
+            sprite_attr_w <= 0;
+            // wait for vc > 240 so copy isn't triggered again this frame
+            if ( vc > 240 ) begin
+                sprite_copy_state <= 0;
+            end
         end
         
         // tile state machine
@@ -1655,35 +1635,56 @@ dual_port_ram #(.LEN(4096), .DATA_WIDTH(8))  shared_ram (
     .q_b ( z80_shared_dout )
     );
 
+reg         sprite_attr_w ;
 reg  [10:0] sprite_attr_addr;
 wire [15:0] sprite_attr_dout;
 wire [15:0] sprite_ram_dout;
 
-dual_port_ram #(.LEN(2048), .DATA_WIDTH(8)) sprite_ram_l (
-    .clock_a ( clk_10M ),
-    .address_a ( cpu_a[11:1] ),
-    .wren_a ( sprite_ram_cs & !cpu_rw & !cpu_lds_n),
-    .data_a ( cpu_dout[7:0]  ),
-    .q_a ( sprite_ram_dout[7:0] ),
+reg  [10:0] spritebuf_attr_addr;
+wire [15:0] spritebuf_attr_dout;
 
-    .clock_b ( clk_sys ),
-    .address_b ( sprite_attr_addr ),
-    .wren_b ( 0 ),
-    .q_b ( sprite_attr_dout[7:0] )
-    );
+dual_port_ram #(.LEN(2048), .DATA_WIDTH(8)) sprite_ram_l 
+(
+    .clock_a( clk_10M ),
+    .address_a( cpu_a[11:1] ),
+    .wren_a( sprite_ram_cs & !cpu_rw & !cpu_lds_n),
+    .data_a( cpu_dout[7:0]  ),
+    .q_a( sprite_ram_dout[7:0] ),
 
-dual_port_ram #(.LEN(2048), .DATA_WIDTH(8)) sprite_ram_h (
-    .clock_a ( clk_10M ),
-    .address_a ( cpu_a[11:1] ),
-    .wren_a ( sprite_ram_cs & !cpu_rw & !cpu_uds_n),
-    .data_a ( cpu_dout[15:8]  ),
-    .q_a ( sprite_ram_dout[15:8] ),
+    .clock_b( clk_sys ),
+    .address_b( sprite_attr_addr ),
+    .wren_b( 0 ),
+    .q_b( sprite_attr_dout[7:0] )
+);
 
-    .clock_b ( clk_sys ),
-    .address_b ( sprite_attr_addr ),
-    .wren_b ( 0 ),
-    .q_b ( sprite_attr_dout[15:8] )
-    );
+dual_port_ram #(.LEN(2048), .DATA_WIDTH(8)) sprite_ram_h 
+(
+    .clock_a( clk_10M ),
+    .address_a( cpu_a[11:1] ),
+    .wren_a( sprite_ram_cs & !cpu_rw & !cpu_uds_n),
+    .data_a( cpu_dout[15:8]  ),
+    .q_a( sprite_ram_dout[15:8] ),
+
+    .clock_b( clk_sys ),
+    .address_b( sprite_attr_addr ),
+    .wren_b( 0 ),
+    .q_b( sprite_attr_dout[15:8] )
+);
+
+dual_port_ram #(.LEN(2048), .DATA_WIDTH(16)) spritebuf_ram 
+(
+    .clock_a( clk_sys ),
+    .address_a( sprite_attr_addr ),
+    .wren_a( sprite_attr_w ),
+    .data_a( sprite_attr_dout ),
+    .q_a( ),
+
+    .clock_b( clk_sys ),
+    .address_b( spritebuf_attr_addr ),
+    .wren_b( 0 ),
+    .q_b( spritebuf_attr_dout )
+);
+
     
 reg  [15:0] sprite_rom_addr ;
 wire [31:0] sprite_rom_dout ;

@@ -2,8 +2,6 @@
 
 module chip_select
 (
-    input  [7:0] pcb,
-
     input [23:0] cpu_a,
     input        cpu_as_n,
 
@@ -51,14 +49,19 @@ module chip_select
     
 );
 
-localparam pcb_truxton       = 4;
-localparam pcb_rallybike     = 7;
+//function m68k_cs;
+//        input [23:0] base_address;
+//        input  [7:0] width;
+//begin
+//    m68k_cs = ( cpu_a >> width == base_address >> width ) & !cpu_as_n;
+//end
+//endfunction
 
 function m68k_cs;
-        input [23:0] base_address;
-        input  [7:0] width;
+        input [23:0] start_address;
+        input [23:0] end_address;
 begin
-    m68k_cs = ( cpu_a >> width == base_address >> width ) & !cpu_as_n;
+    m68k_cs = ( cpu_a[23:0] >= start_address && cpu_a[23:0] <= end_address) & !cpu_as_n;
 end
 endfunction
 
@@ -71,27 +74,40 @@ endfunction
 
 always @ (*) begin
 
-    scroll_y_offset = ( pcb == pcb_rallybike ) ? 16 : 0 ;
+    scroll_y_offset = 16 ;
 
-    prog_rom_cs       = m68k_cs( 'h000000, 19 );
-    ram_cs            = m68k_cs( 'h080000, 14 );
-    bcu_flip_cs       = m68k_cs( 'h100000,  1 );
-    tile_ofs_cs       = m68k_cs( 'h100002,  1 );
-    tile_attr_cs      = m68k_cs( 'h100004,  1 );
-    tile_num_cs       = m68k_cs( 'h100006,  1 );
-    scroll_cs         = m68k_cs( 'h100010,  4 );
-    scroll_ofs_x_cs   = m68k_cs( 'h1c0000,  1 );
-    scroll_ofs_y_cs   = m68k_cs( 'h1c0002,  1 );
+    prog_rom_cs       = m68k_cs( 24'h000000, 24'h07ffff );
+    ram_cs            = m68k_cs( 24'h080000, 24'h083fff );
 
+    sprite_ram_cs     = m68k_cs( 24'h0c0000, 24'h0c0fff );
 
-    vblank_cs         = m68k_cs( 'h140000,  1 );
-    tile_palette_cs   = m68k_cs( 'h144000, 11 );
-    sprite_palette_cs = m68k_cs( 'h146000, 11 );
+    bcu_flip_cs       = m68k_cs( 24'h100000, 24'h100001 );
+    tile_ofs_cs       = m68k_cs( 24'h100002, 24'h100003 );
+    tile_attr_cs      = m68k_cs( 24'h100004, 24'h100005 );
+    tile_num_cs       = m68k_cs( 24'h100006, 24'h100007 );
+    scroll_cs         = m68k_cs( 24'h100010, 24'h10001f );
+    
+    vblank_cs         = m68k_cs( 24'h140000, 24'h140001 );
+    int_en_cs         = m68k_cs( 24'h140002, 24'h140003 );
+    crtc_cs           = m68k_cs( 24'h140008, 24'h14000f );
 
-    int_en_cs         = m68k_cs( 'h140002,  1 );
-    crtc_cs           = m68k_cs( 'h140008,  3 );
+    tile_palette_cs   = m68k_cs( 24'h144000, 24'h1447ff );
+    sprite_palette_cs = m68k_cs( 24'h146000, 24'h1467ff );
 
-    shared_ram_cs     = m68k_cs( 'h180000, 12 );
+    shared_ram_cs     = m68k_cs( 24'h180000, 24'h180fff );
+    
+    scroll_ofs_x_cs   = m68k_cs( 24'h1c0000, 24'h1c0001 );
+    scroll_ofs_y_cs   = m68k_cs( 24'h1c0002, 24'h1c0003 );
+    
+    frame_done_cs     = 1'b0;
+    
+    sprite_ofs_cs     = 0 ;
+    sprite_cs         = 0 ;
+    sprite_size_cs    = 0 ;
+
+    fcu_flip_cs       = 0 ;
+  
+    reset_z80_cs      = m68k_cs( 24'h1c8000, 24'h1c8001 );
     
     z80_p1_cs         = z80_cs( 8'h00 );
     z80_p2_cs         = z80_cs( 8'h10 );
@@ -102,38 +118,6 @@ always @ (*) begin
     z80_sound1_cs     = z80_cs( 8'h61 );
     z80_tjump_cs      = z80_cs( 8'h70 );    
     
-    // Setup lines depending on pcb
-    case (pcb)
-        pcb_truxton: begin
-            frame_done_cs     = m68k_cs( 'h0c0000,  1 );
-
-            sprite_ram_cs     = 0 ;
-            
-            sprite_ofs_cs     = m68k_cs( 'h0c0002,  1 );
-            sprite_cs         = m68k_cs( 'h0c0004,  1 );
-            sprite_size_cs    = m68k_cs( 'h0c0006,  1 );
-
-            fcu_flip_cs       = m68k_cs( 'h1c0006,  1 );
-
-            reset_z80_cs      = m68k_cs( 'h1d0000,  1 );
-        end
-
-        pcb_rallybike: begin
-            frame_done_cs     = 1'b0;
-
-            sprite_ram_cs     = m68k_cs( 'h0c0000, 12 );
-            
-            sprite_ofs_cs     = 0 ;
-            sprite_cs         = 0 ;
-            sprite_size_cs    = 0 ;
-
-            fcu_flip_cs       = 0 ;
-          
-            reset_z80_cs      = m68k_cs( 'h1c8000,  1 );
-        end
-
-        default:;
-    endcase
 end
 
 endmodule
