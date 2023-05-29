@@ -202,7 +202,7 @@ assign BUTTONS = 0;
 // 0         1         2         3          4         5         6   
 // 01234567890123456789012345678901 23456789012345678901234567890123
 // 0123456789ABCDEFGHIJKLMNOPQRSTUV 0123456789ABCDEFGHIJKLMNOPQRSTUV
-// X  XXXXXXXX XX     X X XXXXXXXX             XX           XXXXXXXX
+// X  XXXXXXXX XX     X X XXXXXXXX  X          XX           XXXXXXXX
 
 wire [1:0] aspect_ratio = status[9:8];
 wire       orientation  = ~status[3];
@@ -254,9 +254,9 @@ localparam CONF_STR = {
     "-;",
     "P3,Core Options;",
     "P3-;",
-    "P3o6,Swap P1/P2 Joystick,Off,On;",
-    "P3-;",
     "P3OF,68k Freq.,10Mhz,17.5MHz;",
+    "P3-;",
+    "P3o0,Scroll Debug,Off,On;",
     "P3-;",
     "DIP;",
     "-;",
@@ -270,7 +270,7 @@ localparam CONF_STR = {
 wire hps_forced_scandoubler;
 wire forced_scandoubler = hps_forced_scandoubler | status[10];
 
-wire  [1:0] buttons;
+wire  [2:0] buttons;
 wire [63:0] status;
 wire [10:0] ps2_key;
 wire [15:0] joy0, joy1;
@@ -331,7 +331,7 @@ wire [26:0] ioctl_addr;
 wire [15:0] ioctl_dout;
 wire [15:0] ioctl_din;
 
-reg         pcb;
+reg   [1:0] pcb;
 wire        tile_priority_type;
 wire [15:0] scroll_y_offset;
 wire [15:0] scroll_x_offset = 30;
@@ -350,27 +350,38 @@ reg [7:0] z80_tjump;
 reg [7:0] system;
 
 always @ (posedge clk_sys ) begin
-    p1        <= { 1'b0, p1_buttons[2:0], p1_right, p1_left, p1_down, p1_up };
-    p2        <= { 1'b0, p2_buttons[2:0], p2_right, p2_left, p2_down, p2_up };
-    z80_dswa  <= sw[0];
-    z80_dswb  <= sw[1];
-    z80_tjump <= sw[2];
-    system    <= { vbl, start2, start1, coin_b, coin_a, service, key_tilt, key_service };
+    debug_buttons <= status[32];
+
+    if ( status[32] == 1 ) begin
+        p1        <= { 1'b0, p1_up | p1_buttons[2], p1_buttons[1:0], p1_right, p1_left, p1_down, p1_up };
+        p2        <= { 1'b0, p2_up | p1_buttons[2], p2_buttons[1:0], p2_right, p2_left, p2_down, p2_up };
+        z80_dswa  <= { sw[1][7:3], sw[1][2] | status[32], sw[0][1:0] };
+        z80_dswb  <= sw[1];
+        z80_tjump <= sw[2];
+        system    <= { vbl, start2 | p1_buttons[3], start1 | p1_buttons[3], coin_b, coin_a, service | status[32], key_tilt, key_service };
+    end else begin
+        p1        <= { 1'b0, p1_buttons[2:0], p1_right, p1_left, p1_down, p1_up };
+        p2        <= { 1'b0, p2_buttons[2:0], p2_right, p2_left, p2_down, p2_up };
+        z80_dswa  <= sw[0];
+        z80_dswb  <= sw[1];
+        z80_tjump <= sw[2];
+        system    <= { vbl, start2, start1, coin_b, coin_a, service, key_tilt, key_service };
+    end
 end
 
-reg        p1_swap;
+reg        debug_buttons;
 
 reg        p1_right;
 reg        p1_left;
 reg        p1_down;
 reg        p1_up;
-reg [2:0]  p1_buttons;
+reg [3:0]  p1_buttons;
 
 reg        p2_right;
 reg        p2_left;
 reg        p2_down;
 reg        p2_up;
-reg [2:0]  p2_buttons;
+reg [3:0]  p2_buttons;
 
 reg start1;
 reg start2;
@@ -380,43 +391,27 @@ reg b_pause;
 reg service;
 
 always @ * begin
-    p1_swap <= status[38];
-
-        if ( status[38] == 0 ) begin
-        p1_right   <= joy0[0]   | key_p1_right;
-        p1_left    <= joy0[1]   | key_p1_left;
-        p1_down    <= joy0[2]   | key_p1_down;
-        p1_up      <= joy0[3]   | key_p1_up;
-        p1_buttons <= joy0[6:4] | {key_p1_c, key_p1_b, key_p1_a};
-
-        p2_right   <= joy1[0]   | key_p2_right;
-        p2_left    <= joy1[1]   | key_p2_left;
-        p2_down    <= joy1[2]   | key_p2_down;
-        p2_up      <= joy1[3]   | key_p2_up;
-        p2_buttons <= joy1[6:4] | {key_p2_c, key_p2_b, key_p2_a};
-    end else begin
         p2_right   <= joy0[0]   | key_p1_right;
         p2_left    <= joy0[1]   | key_p1_left;
         p2_down    <= joy0[2]   | key_p1_down;
         p2_up      <= joy0[3]   | key_p1_up;
-        p2_buttons <= joy0[6:4] | {key_p1_c, key_p1_b, key_p1_a};
+        p2_buttons <= joy0[7:4] | {key_p1_c, key_p1_b, key_p1_a};
 
         p1_right   <= joy1[0]   | key_p2_right;
         p1_left    <= joy1[1]   | key_p2_left;
         p1_down    <= joy1[2]   | key_p2_down;
         p1_up      <= joy1[3]   | key_p2_up;
-        p1_buttons <= joy1[6:4] | {key_p2_c, key_p2_b, key_p2_a};
-    end
+        p1_buttons <= joy1[7:4] | {key_p2_c, key_p2_b, key_p2_a};
 end
 
 always @ * begin
-        start1    <= joy0[7]  | joy1[7]  | key_start_1p;
-        start2    <= joy0[8]  | joy1[8]  | key_start_2p;
+        start1    <= joy0[8]  | joy1[8]  | key_start_1p;
+        start2    <= joy0[9]  | joy1[9]  | key_start_2p;
 
-        coin_a    <= joy0[9]  | joy1[9]  | key_coin_a;
-        coin_b    <= joy0[10] | joy1[10] | key_coin_b;
+        coin_a    <= joy0[10] | joy1[10] | key_coin_a;
+        coin_b    <= joy0[11] | joy1[11] | key_coin_b;
 
-        b_pause   <= joy0[11] | key_pause;
+        b_pause   <= joy0[12] | key_pause;
         service   <= key_test;
 end
 
@@ -1241,6 +1236,15 @@ reg  [9:0] sprite_y;
 
 reg [7:0] sprite_buf_num;
 
+reg [1:0] vtotal_282_flag;
+
+always @ (posedge clk_sys) begin // Check System Vcount flag for 60Hz mode
+    if ({crtc[2][7:0], 1'b1 } == 269)
+        vtotal_282_flag <= 0;
+    else
+        vtotal_282_flag <= 1;
+end
+
 // SCU controller. Sprite RAM format  (Rally Bike)
 //
 //  0         1         2         3
@@ -1411,7 +1415,7 @@ always @ (posedge clk_sys) begin
             sprite_copy_state <= 0;
         end
         // tile state machine
-        if ( draw_state == 0 && vc == { crtc[2][7:0], 1'b1 } ) begin
+        if ( draw_state == 0 && vc == ({ crtc[2][7:0], 1'b1 } - (status[19] ? (vtotal_282_flag ? 5'd19 : 4'd7) : 3'd0)) ) begin // 282 Lines standard (263 Lines for 60Hz)
             layer <= 4; // layer 4 is layer 0 but draws hidden and transparent
             y <= 0;
             draw_state <= 2;
@@ -1505,7 +1509,7 @@ always @ (posedge clk_sys) begin
                 // wait for next line or quit
                 if ( y == 239 ) begin
                     draw_state <= 0;
-                end else if ( hc ==  (status[19] ? 9'd444 : 9'd449) ) begin
+                end else if ( hc ==  (status[19] ? 9'd444 : 9'd449) ) begin // 450 Lines standard (445 Lines for NTSC standard 15.73kHz line freq)
                     y <= y + 1;
                     draw_state <= 2;
                     sprite_state <= 0;
