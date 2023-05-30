@@ -5,9 +5,9 @@ FPGA compatible core of Toaplan Version 1 arcade hardware for [**MiSTerFPGA**](h
 
 The intent is for this core to be a 1:1 implementation of Toaplan V1 hardware. Currently in beta state, this core is in active development with assistance from [**atrac17**](https://github.com/atrac17).
 
-Horror Story / Demon's World (TP-016), Tatsujin (TP-013B), Hellfire (TP-014), Zero Wing (TP-015), OutZone (TP-018), Vimana (TP-019), and Same! Same! Same! (TP-017) are also Toaplan V1 titles. Separate repositories located [**here**](https://github.com/va7deo?tab=repositories).
+Demon's World (TP-016), Tatsujin (TP-013B), Hellfire (TP-014), Zero Wing (TP-015), OutZone (TP-018), Vimana (TP-019), and Fire Shark (TP-017) are also Toaplan V1 titles. Separate repositories located [**here**](https://github.com/va7deo?tab=repositories).
 
-
+![rallybike](https://github.com/va7deo/rallybike/assets/32810066/9dcb9e6a-9aaa-45d6-96e2-8765c22f0043)
 
 ## Supported Titles
 
@@ -23,8 +23,8 @@ Horror Story / Demon's World (TP-016), Tatsujin (TP-013B), Hellfire (TP-014), Ze
 | [**t80**](https://opencores.org/projects/t80)                                         | [**Zilog Z80 CPU**](https://en.wikipedia.org/wiki/Zilog_Z80)                | Daniel Wallner                                 |
 | [**jtopl2**](https://github.com/jotego/jtopl)                                         | [**Yamaha OPL2**](https://en.wikipedia.org/wiki/Yamaha_OPL#OPL2)            | Jose Tejada                                    |
 | [**yc_out**](https://github.com/MikeS11/MiSTerFPGA_YC_Encoder)                        | [**Y/C Video Module**](https://en.wikipedia.org/wiki/S-Video)               | Mike Simone                                    |
-| [**mem**](https://github.com/MiSTer-devel/Arcade-Rygar_MiSTer/tree/master/src/mem)    | SDRAM Controller / Rom Downloader                                           | Josh Bassett, modified by Darren Olafson       |
-| [**core_template**](https://github.com/MiSTer-devel/Template_MiSTer)                  | MiSTer Framework Template                                                   | sorgelig, modified by Darren Olafson / atrac17 |
+| [**mem**](https://github.com/MiSTer-devel/Arcade-Rygar_MiSTer/tree/master/src/mem)    | SDRAM Controller / Rom Downloader                                           | Josh Bassett; modified by Darren Olafson       |
+| [**core_template**](https://github.com/MiSTer-devel/Template_MiSTer)                  | MiSTer Framework Template                                                   | sorgelig; modified by Darren Olafson / atrac17 |
 
 # Known Issues / Tasks
 
@@ -103,17 +103,17 @@ _(Dash Yarou / Rally Bike)_
 
 - Additional toggle to enable the scandoubler without changing ini settings and new scanline option for 100% is available, this draws a black line every other frame. Below is an example.
 
-<table><tr><th>Scandoubler Fx</th><th>Scanlines 25%</th><th>Scanlines 50%</th><th>Scanlines 75%</th><th>Scanlines 100%</th><tr><td><br> <p align="center"><img width="120" height="160" src="FILLME"></td><td><br> <p align="center"><img width="120" height="160" src="FILLME"></td><td><br> <p align="center"><img width="120" height="160" src="FILLME"></td><td><br> <p align="center"><img width="120" height="160" src="FILLME"></td><td><br> <p align="center"><img width="120" height="160" src="FILLME"></td></tr></table>
+<table><tr><th>Scandoubler Fx</th><th>Scanlines 25%</th><th>Scanlines 50%</th><th>Scanlines 75%</th><th>Scanlines 100%</th><tr><td><br> <p align="center"><img width="120" height="160" src="https://github.com/va7deo/rallybike/assets/32810066/23abfee5-4564-4ae1-a3d6-2867c9a61ec2"></td><td><br> <p align="center"><img width="120" height="160" src="https://github.com/va7deo/rallybike/assets/32810066/d5b26ca6-6942-41a9-9d4d-3ad07b83f282"></td><td><br> <p align="center"><img width="120" height="160" src="https://github.com/va7deo/rallybike/assets/32810066/bc6d4964-136f-4a45-930c-871b1a24bd08"></td><td><br> <p align="center"><img width="120" height="160" src="https://github.com/va7deo/rallybike/assets/32810066/7cb086f7-344f-4598-a390-f934564f6759"></td><td><br> <p align="center"><img width="120" height="160" src="https://github.com/va7deo/rallybike/assets/32810066/e136443c-9293-49b7-988a-56b9a9bde997"></td></tr></table>
 
-### Scroll Debug / Level Skip Option
+### Scroll Debug / No Death / Level Skip Option
 
 - There is a toggle to enable the third button for "Slow Scroll" in Dash Yarou. You can also skip the level by pressing buttons 1 and 2 simultaneously. See the "PCB Information" section for further information.
 
 # PCB Information / Control Layout
 
-| Title            | Joystick | Service Menu                                                                                               | Dip Switches                                                                                              | Shared Controls | Dip Default | PCB Information |
-|------------------|----------|------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|-----------------|-------------|-----------------|
-| **Dash Yarou** | 8-Way    | [**Service Menu**](FILLME) | [**Dip Sheet**](FILLME) | Turn Based              | Upright         | When the "Table Type" dipswitch is toggled to "Upright", Player 1 and Player 2 joystick and buttons are active on the same controller. <br><br> Enabling the "No Death/Stop" dipswitch enables in-game pause by pressing P2 Start; pressing P2 Start returns to game. There is a slow motion debug setting; press P1 and P2 Start simultaneously. The kill player / level skip button combination is button 1 / 2. <br><br> These are mappable inputs. For ease of use, these features are enabled when toggling "Scroll Debug" in the core settings; there is no need to toggle the dipswitch. <br><br> The "Slow Scroll" button (P1/P2 Button 3) is not on hardware; P1 and P2 Start are merged to button 3. |
+| Title            | Joystick | Service Menu                                                                                               | Dip Switches                                                                                              | Shared Controls | Dip Default | PCB Information                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+|------------------|----------|------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|-----------------|-------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Dash Yarou** | 8-Way    | [**Service Menu**](https://github.com/va7deo/rallybike/assets/32810066/886563d1-eaa8-4f2e-b24d-9635b0abe144) | [**Dip Sheet**](https://github.com/va7deo/rallybike/assets/32810066/16d0ca12-01c7-469c-8a48-592306537fd0) | Turn Based      | Upright     | When the "Table Type" dipswitch is toggled to "Upright", Player 1 and Player 2 joystick and buttons are active on the same controller. This is the default setting. <br><br> Enabling the "Scroll Debug toggle allows for "No Death/Stop" and in-game pause by pressing P2 Start; pressing P2 Start returns to game. There is a slow motion debug setting; press P1 and P2 Start simultaneously. The kill player / level skip button combination is button 1 / 2. <br><br> These are mappable inputs. For ease of use, these features are enabled when toggling "Scroll Debug" in the core settings; there is no need to toggle the dipswitch. <br><br> The "Slow Scroll" button (P1/P2 Button 3) is not on hardware; P1 and P2 Start are merged to button 3. |
 
 <br>
 

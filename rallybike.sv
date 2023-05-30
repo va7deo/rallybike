@@ -256,7 +256,7 @@ localparam CONF_STR = {
     "P3-;",
     "P3OF,68k Freq.,10Mhz,17.5MHz;",
     "P3-;",
-    "P3o0,Scroll Debug,Off,On;",
+    "P3o0,No Death-Stop/Scroll Debug,Off,On;",
     "P3-;",
     "DIP;",
     "-;",
