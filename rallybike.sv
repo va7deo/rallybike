@@ -376,17 +376,17 @@ reg b_pause;
 reg service;
 
 always @ * begin
-        p1_right   <= joy0[0]   | key_p2_right;
-        p1_left    <= joy0[1]   | key_p2_left;
-        p1_down    <= joy0[2]   | key_p2_down;
-        p1_up      <= joy0[3]   | key_p2_up;
-        p1_buttons <= joy0[7:4] | {key_p2_c, key_p2_b, key_p2_a};
+        p1_right   <= joy0[0]   | key_p1_right;
+        p1_left    <= joy0[1]   | key_p1_left;
+        p1_down    <= joy0[2]   | key_p1_down;
+        p1_up      <= joy0[3]   | key_p1_up;
+        p1_buttons <= joy0[7:4] | {key_p1_c, key_p1_b, key_p1_a};
 
-        p2_right   <= joy1[0]   | key_p1_right;
-        p2_left    <= joy1[1]   | key_p1_left;
-        p2_down    <= joy1[2]   | key_p1_down;
-        p2_up      <= joy1[3]   | key_p1_up;
-        p2_buttons <= joy1[7:4] | {key_p1_c, key_p1_b, key_p1_a};
+        p2_right   <= joy1[0]   | key_p2_right;
+        p2_left    <= joy1[1]   | key_p2_left;
+        p2_down    <= joy1[2]   | key_p2_down;
+        p2_up      <= joy1[3]   | key_p2_up;
+        p2_buttons <= joy1[7:4] | {key_p2_c, key_p2_b, key_p2_a};
 end
 
 always @ * begin
@@ -878,17 +878,14 @@ jtframe_mixer #(.W0(16), .WOUT(16)) u_mix_mono(
     .peak   (              )
 );
 
-reg audio_en;    // audio enable
-
 always @ (posedge clk_sys ) begin
-    audio_en <= status[11];
-    if ( audio_en == 1 && pause_cpu == 0 ) begin
+    if ( pause_cpu == 1 ) begin
+        AUDIO_L <= 0;
+        AUDIO_R <= 0;
+        end else if ( pause_cpu == 0 ) begin
         // mix audio
         AUDIO_L <= mono;
         AUDIO_R <= mono;
-    end else begin
-        AUDIO_L <= 0;
-        AUDIO_R <= 0;
     end
 end
 
