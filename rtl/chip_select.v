@@ -32,7 +32,6 @@ module chip_select
     output       sprite_ram_cs,
     output       fcu_flip_cs,
     output       reset_z80_cs,
-    output       dsp_ctrl_cs,
 
     // Z80 selects
     output       z80_p1_cs,
@@ -46,16 +45,7 @@ module chip_select
 
     // other params
     output reg [15:0] scroll_y_offset
-    
 );
-
-//function m68k_cs;
-//        input [23:0] base_address;
-//        input  [7:0] width;
-//begin
-//    m68k_cs = ( cpu_a >> width == base_address >> width ) & !cpu_as_n;
-//end
-//endfunction
 
 function m68k_cs;
         input [23:0] start_address;
@@ -86,7 +76,7 @@ always @ (*) begin
     tile_attr_cs      = m68k_cs( 24'h100004, 24'h100005 );
     tile_num_cs       = m68k_cs( 24'h100006, 24'h100007 );
     scroll_cs         = m68k_cs( 24'h100010, 24'h10001f );
-    
+
     vblank_cs         = m68k_cs( 24'h140000, 24'h140001 );
     int_en_cs         = m68k_cs( 24'h140002, 24'h140003 );
     crtc_cs           = m68k_cs( 24'h140008, 24'h14000f );
@@ -95,12 +85,11 @@ always @ (*) begin
     sprite_palette_cs = m68k_cs( 24'h146000, 24'h1467ff );
 
     shared_ram_cs     = m68k_cs( 24'h180000, 24'h180fff );
-    
+
     scroll_ofs_x_cs   = m68k_cs( 24'h1c0000, 24'h1c0001 );
     scroll_ofs_y_cs   = m68k_cs( 24'h1c0002, 24'h1c0003 );
-     
     reset_z80_cs      = m68k_cs( 24'h1c8000, 24'h1c8001 );
-    
+
     z80_p1_cs         = z80_cs( 8'h00 );
     z80_p2_cs         = z80_cs( 8'h10 );
     z80_system_cs     = z80_cs( 8'h20 );
@@ -108,8 +97,7 @@ always @ (*) begin
     z80_dswb_cs       = z80_cs( 8'h50 );
     z80_sound0_cs     = z80_cs( 8'h60 );
     z80_sound1_cs     = z80_cs( 8'h61 );
-    z80_tjump_cs      = z80_cs( 8'h70 );    
-    
+    z80_tjump_cs      = z80_cs( 8'h70 );
 end
 
 endmodule

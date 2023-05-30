@@ -256,7 +256,7 @@ localparam CONF_STR = {
     "P3-;",
     "P3OF,68k Freq.,10Mhz,17.5MHz;",
     "P3-;",
-    "P3o0,Scroll Debug,Off,On;",
+    "P3o0,No Death-Stop/Scroll Debug,Off,On;",
     "P3-;",
     "DIP;",
     "-;",
@@ -375,17 +375,17 @@ reg b_pause;
 reg service;
 
 always @ * begin
-        p2_right   <= joy0[0]   | key_p1_right;
-        p2_left    <= joy0[1]   | key_p1_left;
-        p2_down    <= joy0[2]   | key_p1_down;
-        p2_up      <= joy0[3]   | key_p1_up;
-        p2_buttons <= joy0[7:4] | {key_p1_c, key_p1_b, key_p1_a};
+        p1_right   <= joy0[0]   | key_p1_right;
+        p1_left    <= joy0[1]   | key_p1_left;
+        p1_down    <= joy0[2]   | key_p1_down;
+        p1_up      <= joy0[3]   | key_p1_up;
+        p1_buttons <= joy0[7:4] | {key_p1_c, key_p1_b, key_p1_a};
 
-        p1_right   <= joy1[0]   | key_p2_right;
-        p1_left    <= joy1[1]   | key_p2_left;
-        p1_down    <= joy1[2]   | key_p2_down;
-        p1_up      <= joy1[3]   | key_p2_up;
-        p1_buttons <= joy1[7:4] | {key_p2_c, key_p2_b, key_p2_a};
+        p2_right   <= joy1[0]   | key_p2_right;
+        p2_left    <= joy1[1]   | key_p2_left;
+        p2_down    <= joy1[2]   | key_p2_down;
+        p2_up      <= joy1[3]   | key_p2_up;
+        p2_buttons <= joy1[7:4] | {key_p2_c, key_p2_b, key_p2_a};
 
         start1    <= joy0[8]  | joy1[8]  | key_start_1p;
         start2    <= joy0[9]  | joy1[9]  | key_start_2p;
@@ -772,6 +772,7 @@ always @ (posedge clk_sys) begin
             // wait if rom is selected and data is not yet available
             z80_wait_n <= 0;
         end
+        
         if ( z80_rd_n == 0 ) begin
             if ( sound_rom_1_cs ) begin
                 if ( sound_rom_1_data_valid ) begin
@@ -799,6 +800,7 @@ always @ (posedge clk_sys) begin
                 z80_din <= 8'h00;
             end
         end
+        
         sound_wr <= 0;
         if ( z80_wr_n == 0 ) begin
             if ( z80_sound0_cs | z80_sound1_cs ) begin
@@ -838,8 +840,6 @@ jtopl #(.OPL_TYPE(2)) jtopl2
     .sample(opl_sample_clk)
 );
 
-wire       audio_en   = status[11];       // audio enable
-
 wire [1:0] opl2_level = status[44:43];    // opl2 audio mix
 
 reg  [7:0] opl2_mult;
@@ -850,12 +850,12 @@ always @( posedge clk_sys, posedge reset ) begin
     if (reset) begin
         opl2_mult<=0;
     end else begin
-    case( opl2_level )
-        0: opl2_mult <= 8'h0c;    // 75%
-        1: opl2_mult <= 8'h08;    // 50%
-        2: opl2_mult <= 8'h04;    // 25%
-        3: opl2_mult <= 8'h00;    // 0%
-    endcase
+        case( opl2_level )
+            0: opl2_mult <= 8'h0c;    // 75%
+            1: opl2_mult <= 8'h08;    // 50%
+            2: opl2_mult <= 8'h04;    // 25%
+            3: opl2_mult <= 8'h00;    // 0%
+        endcase
     end
 end
 
@@ -879,14 +879,14 @@ jtframe_mixer #(.W0(16), .WOUT(16)) u_mix_mono(
     .peak   (              )
 );
 
-always @ * begin
-    if ( audio_en == 0 ) begin
+always @ (posedge clk_sys ) begin
+    if ( pause_cpu == 1 ) begin
+        AUDIO_L <= 0;
+        AUDIO_R <= 0;
+    end else if ( pause_cpu == 0 ) begin
         // mix audio
         AUDIO_L <= mono;
         AUDIO_R <= mono;
-    end else begin
-        AUDIO_L <= 0;
-        AUDIO_R <= 0;
     end
 end
 
@@ -939,10 +939,6 @@ wire sprite_ofs_cs;
 wire sprite_cs; // *** offset needs to be auto-incremented
 wire sprite_size_cs; // *** offset needs to be auto-incremented
 wire sprite_ram_cs;
-
-wire dsp_ctrl_cs;
-//TMS32010 mapping may not be necessary here or the chipselect
-//wire dsp_rom_1_cs;    // map(0x000, 0x7ff).rom();
 
 wire z80_p1_cs;
 wire z80_p2_cs;
@@ -1019,22 +1015,28 @@ always @ (posedge clk_sys) begin
             if ( int_en_cs ) begin
                 int_en <= cpu_dout[0];
             end
+            
             if ( crtc_cs ) begin
                 crtc[ cpu_a[2:1] ] <= cpu_dout;
             end
+            
             if ( bcu_flip_cs ) begin
                 tile_flip <= cpu_dout[0];
             end
+            
             if ( sprite_ofs_cs ) begin
                 // mask out valid range
                 curr_sprite_ofs <= { 6'b0, cpu_dout[9:0] };
             end
+            
             if ( scroll_ofs_x_cs ) begin
                 scroll_ofs_x <= cpu_dout;
             end
+            
             if ( scroll_ofs_y_cs ) begin
                 scroll_ofs_y <= cpu_dout;
             end
+            
             // x layer values are even addresses
             if ( scroll_cs ) begin
                 if ( cpu_a[1] == 0 ) begin
@@ -1043,10 +1045,12 @@ always @ (posedge clk_sys) begin
                     scroll_y[ cpu_a[3:2] ] <= cpu_dout[15:7];
                 end
             end
+            
             // offset needs to be auto-incremented
             if ( sprite_cs | sprite_size_cs ) begin
                 inc_sprite_ofs <= 1;
             end
+            
             if ( reset_z80_cs ) begin
                 // the pcb writes to a latch to control the reset
                 if ( cpu_dout == 0 ) begin
@@ -1055,6 +1059,7 @@ always @ (posedge clk_sys) begin
                 end
             end
         end
+        
         // write lasts multiple cpu clocks so limit to one increment per write signal
         if ( inc_sprite_ofs == 1 && cpu_rw == 1 ) begin
             curr_sprite_ofs <= curr_sprite_ofs + 1;
@@ -1355,6 +1360,7 @@ always @ (posedge clk_sys) begin
             sprite_fb_w <= 0;
             sprite_state <= 15; // done
         end
+        
         // copy tile ram and scroll info
         // not sure if this is needed. need to check to see when tile ram is updated.
         if (  tile_copy_state == 0 && vc == 240  ) begin
@@ -1381,9 +1387,8 @@ always @ (posedge clk_sys) begin
             // sprite_attr_addr valid
             sprite_attr_w <= 1;
             sprite_copy_state <= 2;
-        end else if ( sprite_copy_state == 2 ) begin        
+        end else if ( sprite_copy_state == 2 ) begin
             // sprite_attr_dout valid and write enabled
-            
             sprite_attr_addr <= sprite_attr_addr + 1;
             // wait for read from source
             if ( sprite_attr_addr == 11'h7ff ) begin
@@ -1731,10 +1736,10 @@ dual_port_ram #(.LEN(2048), .DATA_WIDTH(16)) spritebuf_ram
     .q_b( spritebuf_attr_dout )
 );
 
-    
+
 reg  [15:0] sprite_rom_addr ;
 wire [31:0] sprite_rom_dout ;
-    
+
 wire sprite_rom_w = ioctl_download & ioctl_wr & ( ioctl_index == 0 );
 
 wire sbit0 = (ioctl_addr >= 24'h180000 && ioctl_addr < 24'h190000 );
@@ -1919,7 +1924,7 @@ rom_controller rom_controller
     .sdram_ack(sdram_ack),
     .sdram_valid(sdram_valid),
     .sdram_q(sdram_q)
-  );
+);
 
 
 cache prog_cache
