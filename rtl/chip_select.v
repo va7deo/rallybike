@@ -98,15 +98,7 @@ always @ (*) begin
     
     scroll_ofs_x_cs   = m68k_cs( 24'h1c0000, 24'h1c0001 );
     scroll_ofs_y_cs   = m68k_cs( 24'h1c0002, 24'h1c0003 );
-    
-    frame_done_cs     = 1'b0;
-    
-    sprite_ofs_cs     = 0 ;
-    sprite_cs         = 0 ;
-    sprite_size_cs    = 0 ;
-
-    fcu_flip_cs       = 0 ;
-  
+     
     reset_z80_cs      = m68k_cs( 24'h1c8000, 24'h1c8001 );
     
     z80_p1_cs         = z80_cs( 8'h00 );

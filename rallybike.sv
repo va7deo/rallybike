@@ -341,26 +341,19 @@ reg [7:0] z80_tjump;
 reg [7:0] system;
 
 always @ (posedge clk_sys ) begin
-    debug_buttons <= status[32];
+
+    p1        <= { 1'b0, p1_buttons[2:0], p1_right, p1_left, p1_down, p1_up };
+    p2        <= { 1'b0, p2_buttons[2:0], p2_right, p2_left, p2_down, p2_up };
+    z80_dswa  <= sw[0];
+    z80_dswb  <= sw[1];
+    z80_tjump <= sw[2];
 
     if ( status[32] == 1 ) begin
-        p1        <= { 1'b0, p1_up | p1_buttons[2], p1_buttons[1:0], p1_right, p1_left, p1_down, p1_up };
-        p2        <= { 1'b0, p2_up | p1_buttons[2], p2_buttons[1:0], p2_right, p2_left, p2_down, p2_up };
-        z80_dswa  <= { sw[1][7:3], sw[1][2] | status[32], sw[0][1:0] };
-        z80_dswb  <= sw[1];
-        z80_tjump <= sw[2];
         system    <= { vbl, start2 | p1_buttons[3], start1 | p1_buttons[3], coin_b, coin_a, service | status[32], key_tilt, key_service };
     end else begin
-        p1        <= { 1'b0, p1_buttons[2:0], p1_right, p1_left, p1_down, p1_up };
-        p2        <= { 1'b0, p2_buttons[2:0], p2_right, p2_left, p2_down, p2_up };
-        z80_dswa  <= sw[0];
-        z80_dswb  <= sw[1];
-        z80_tjump <= sw[2];
-        system    <= { vbl, start2, start1, coin_b, coin_a, service, key_tilt, key_service };
+        system    <= { vbl, start2,                 start1,                 coin_b, coin_a, service,              key_tilt, key_service };
     end
 end
-
-reg        debug_buttons;
 
 reg        p1_right;
 reg        p1_left;
@@ -393,9 +386,7 @@ always @ * begin
         p1_down    <= joy1[2]   | key_p2_down;
         p1_up      <= joy1[3]   | key_p2_up;
         p1_buttons <= joy1[7:4] | {key_p2_c, key_p2_b, key_p2_a};
-end
 
-always @ * begin
         start1    <= joy0[8]  | joy1[8]  | key_start_1p;
         start2    <= joy0[9]  | joy1[9]  | key_start_2p;
 
@@ -500,18 +491,21 @@ always @ (posedge clk_sys ) begin
             clk10_count <= clk10_count + 1;
         end
     end
+    
     clk_7M <= ( clk7_count == 0);
     if ( clk7_count == 9 ) begin
         clk7_count <= 0;
     end else begin
         clk7_count <= clk7_count + 1;
     end
+    
     clk_14M <= ( clk14_count == 0);
     if ( clk14_count == 4 ) begin
         clk14_count <= 0;
     end else begin
         clk14_count <= clk14_count + 1;
     end
+    
     clk_3_5M <= ( clk_3_5_count == 0);
     if ( clk_3_5_count == 19 ) begin
         clk_3_5_count <= 0;
@@ -643,7 +637,6 @@ reg ce_pix;
 wire flip = 0;
 
 reg tile_flip;
-reg sprite_flip;
 
 //assign vc = vcx - vs_offset;
 
@@ -746,10 +739,10 @@ always @ (posedge clk_sys) begin
             tile_ofs_cs ? curr_tile_ofs :
             sprite_ofs_cs ? curr_sprite_ofs :
             shared_ram_cs ? cpu_shared_dout :
-            tile_attr_cs ? ( cpu_tile_dout_attr | { 4'b0, cpu_tile_dout_attr[15:12], cpu_tile_dout_attr[5:4], 6'b0 } ) :  //   data | { 4'h0, data[15:12], data[5:4], 6'b0 }  if rally bike tie a couple pins high
+            tile_attr_cs ? ( cpu_tile_dout_attr | { 4'b0, cpu_tile_dout_attr[15:12], cpu_tile_dout_attr[5:4], 6'b0 } ) :  
             tile_num_cs ? cpu_tile_dout_num :
-            frame_done_cs ? { 16 { vbl } } : // get vblank state
             vblank_cs ? { 15'b0, vbl } :
+            int_en_cs ? { 15'b0, int_en } :
             16'hffff;
     end
 end
@@ -1032,13 +1025,6 @@ always @ (posedge clk_sys) begin
             if ( bcu_flip_cs ) begin
                 tile_flip <= cpu_dout[0];
             end
-            if ( fcu_flip_cs ) begin
-                sprite_flip <= cpu_dout[15];
-            end
-//            if ( sprite_ram_cs ) begin
-//                // rally bike
-//                curr_sprite_ofs <= { 6'b0, cpu_dout[9:0] };
-//            end
             if ( sprite_ofs_cs ) begin
                 // mask out valid range
                 curr_sprite_ofs <= { 6'b0, cpu_dout[9:0] };
@@ -1180,10 +1166,15 @@ wire [9:0] tile_y_flipped   = 239 + scroll_y_latch[layer[1:0]] + y_ofs_dx_flippe
 wire [9:0] curr_x = tile_flip ? tile_x_flipped - x :  tile_x_unflipped + x;
 wire [9:0] curr_y = tile_flip ? tile_y_flipped - y :  tile_y_unflipped + y;
 
+reg        sprite_flip_x;
+reg        sprite_flip_y;
+
 reg  [9:0] y;
-//wire [9:0] y_flipped    = scroll_y_offset + ( sprite_flip ? (240 - y ) : y );
-wire [9:0] y_flipped    =  ( sprite_flip ? (240 - y ) : y );
-wire [9:0] sprite_buf_x = sprite_flip ? 320 - (sprite_x + sprite_pos_x ) : sprite_x + sprite_pos_x;    // offset from left of frame
+//wire [9:0] y_flipped    =  ( flip ? (240 - y ) : y );
+//wire [9:0] sprite_buf_x =    flip ? 320 - (sprite_x + sprite_pos_x ) : sprite_x + sprite_pos_x;    // offset from left of frame
+
+wire [9:0] y_flipped    =  y ;
+wire [9:0] sprite_buf_x =  sprite_flip_x ? (sprite_pos_x + ~sprite_x) : (sprite_pos_x + sprite_x) ;    // offset from left of frame
 
 reg [3:0] draw_state;
 reg [3:0] sprite_state;
@@ -1230,24 +1221,6 @@ always @ (posedge clk_sys) begin // Check System Vcount flag for 60Hz mode
         vtotal_282_flag <= 1;
 end
 
-// SCU controller. Sprite RAM format  (Rally Bike)
-//
-//  0         1         2         3
-//  ---- -sss ssss ssss ---- ---- ---- ---- = Sprite number (0 - $7FF)
-//  ---- ---- ---- ---- ---- ---- --cc cccc = Color (0 - $3F)
-//  ---- ---- ---- ---- ---- ---x ---- ---- = Flip X
-//  ---- ---- ---- ---- ---- --y- ---- ---- = Flip Y
-//  ---- ---- ---- ---- ---- pp-- ---- ---- = Priority (0h,4h,8h,Ch (shifted < 2 places))
-//  ???? ?--- ---- ---- ???? ---- ??-- ---- = Unknown / Unused
-//
-//  4         5         6         7
-//  xxxx xxxx x--- ---- ---- ---- ---- ---- = X position
-//  ---- ---- ---- ---- yyyy yyyy y--- ---- = Y position
-//  ---- ---- -??? ???? ---- ---- -??? ???? = Unknown
-
-//reg  [10:0] sprite_attr_addr;
-//wire [15:0] sprite_attr_dout;
-
 reg  [10:0] sprite_index   ;//= sprite_attr_dout[10:0];
 reg   [5:0] sprite_pal_addr;//= sprite_attr_dout[5:0];
 reg   [1:0] sprite_priority;//= sprite_attr_dout[11:10];
@@ -1258,11 +1231,12 @@ always @ (posedge clk_sys) begin
     if ( reset == 1 ) begin
         sprite_state <= 0;
         draw_state <= 0;
-//        sprite_rom_cs <= 0;
         tile_rom_cs <= 0;
         tile_copy_state <= 0;
         sprite_copy_state <= 0;
         tile_draw_state <= 0;
+        sprite_flip_x <= 0 ;
+        sprite_flip_y <= 0 ;
     end else begin
         // render sprites 
         // triggered when the tile rendering starts
@@ -1304,7 +1278,10 @@ always @ (posedge clk_sys) begin
             spritebuf_attr_addr <= { sprite_num, 2'b11 } ; // sprite y pos        
             
             sprite_pal_addr <= spritebuf_attr_dout[5:0] ;
+            sprite_flip_x   <= spritebuf_attr_dout[8];
+            sprite_flip_y   <= spritebuf_attr_dout[9];
             sprite_priority <= spritebuf_attr_dout[11:10] ;
+
             sprite_state <= 6;
         end else if ( sprite_state == 6 ) begin
             // sprite x ready
@@ -1313,10 +1290,18 @@ always @ (posedge clk_sys) begin
         end else if ( sprite_state == 7 ) begin
             // sprite y ready
             sprite_pos_y <= spritebuf_attr_dout[15:7] - 16;
-            sprite_state <= 8;
+            if ( spritebuf_attr_dout[15:7] == 9'h100 ) begin
+                if ( sprite_num < 9'h1ff ) begin
+                    sprite_num <= sprite_num + 1;
+                    sprite_state <= 2;
+                end else begin
+                    sprite_state <= 15;
+                end
+            end else begin
+                sprite_state <= 8;
+            end
         end else if ( sprite_state == 8 ) begin
             // start loop
-//            sprite_rom_cs <= 0;
             sprite_fb_w <= 0;
             sprite_y <=  y_flipped - sprite_pos_y;
             // is sprite visible and is current y in sprite y range
@@ -1330,7 +1315,11 @@ always @ (posedge clk_sys) begin
                 sprite_state <= 15;
             end
         end else if ( sprite_state == 9 ) begin
-            sprite_rom_addr <= { sprite_index, sprite_y[3:0], sprite_x[3] };  // fix
+            if ( sprite_flip_y == 0 ) begin
+                sprite_rom_addr <= { sprite_index,  sprite_y[3:0], sprite_x[3] }; 
+            end else begin
+                sprite_rom_addr <= { sprite_index, ~sprite_y[3:0], sprite_x[3] };  
+            end
             sprite_state <= 10;
         end else if ( sprite_state == 10 ) begin
             sprite_state <= 11;
@@ -1382,20 +1371,6 @@ always @ (posedge clk_sys) begin
             scroll_y_latch[3] <= scroll_y[3] - scroll_ofs_y;
         end
         
-//dual_port_ram #(.LEN(2048), .DATA_WIDTH(16)) spritebuf_ram 
-//(
-//    .clock_a( clk_sys ),
-//    .address_a( sprite_attr_addr ),
-//    .wren_a( sprite_attr_w ),
-//    .data_a( sprite_attr_dout ),
-//    .q_a( ),
-//
-//    .clock_b( clk_sys ),
-//    .address_b( spritebuf_attr_addr ),
-//    .wren_b( 0 ),
-//    .q_b( spritebuf_attr_dout )
-//);      
-        
         // copy sprite attr/size to buffer
         // write is delayed one clock
         if (  sprite_copy_state == 0 && vc == 240  ) begin
@@ -1412,12 +1387,12 @@ always @ (posedge clk_sys) begin
             sprite_attr_addr <= sprite_attr_addr + 1;
             // wait for read from source
             if ( sprite_attr_addr == 11'h7ff ) begin
+                sprite_attr_w <= 0;
                 sprite_copy_state <= 3;
             end else begin
                 sprite_copy_state <= 1;
             end
         end else if ( sprite_copy_state == 3 ) begin
-            sprite_attr_w <= 0;
             // wait for vc > 240 so copy isn't triggered again this frame
             if ( vc > 240 ) begin
                 sprite_copy_state <= 0;
