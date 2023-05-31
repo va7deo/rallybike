@@ -30,7 +30,6 @@ module chip_select
     output       sprite_cs,
     output       sprite_size_cs,
     output       sprite_ram_cs,
-    output       fcu_flip_cs,
     output       reset_z80_cs,
 
     // Z80 selects

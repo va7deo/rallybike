@@ -624,7 +624,6 @@ screen_rotate screen_rotate (.*);
 wire [9:0] sprite_adj_x = 0;
 wire [9:0] sprite_adj_y = 0;
 wire bcu_flip_cs;
-wire fcu_flip_cs;
 
 reg [1:0] adj_layer;
 reg [15:0] scroll_adj_x [3:0];
@@ -1164,12 +1163,13 @@ wire [9:0] y_ofs_dx_flipped = 255;
 // calculate scrolling
 wire [9:0] tile_x_unflipped = scroll_x_latch[layer[1:0]] + x_ofs_dx + scroll_x_offset;
 wire [9:0] tile_y_unflipped = scroll_y_latch[layer[1:0]] + y_ofs_dx + scroll_y_offset;
-wire [9:0] tile_x_flipped   = 319 + scroll_x_latch[layer[1:0]] + x_ofs_dx_flipped + scroll_x_offset; 
-wire [9:0] tile_y_flipped   = 239 + scroll_y_latch[layer[1:0]] + y_ofs_dx_flipped + scroll_y_offset;
+
+wire [9:0] tile_x_flipped   = ( scroll_x_latch[layer[1:0]] + x_ofs_dx_flipped + scroll_x_offset - 112); 
+wire [9:0] tile_y_flipped   = ( scroll_y_latch[layer[1:0]] + y_ofs_dx_flipped + scroll_y_offset - 40 );
 
 // reverse tiles when flipped
-wire [9:0] curr_x = tile_flip ? tile_x_flipped - x :  tile_x_unflipped + x;
-wire [9:0] curr_y = tile_flip ? tile_y_flipped - y :  tile_y_unflipped + y;
+wire [9:0] curr_x = tile_flip ? ( tile_x_flipped - x ) : ( tile_x_unflipped + x );
+wire [9:0] curr_y = tile_flip ? ( tile_y_flipped - y ) : ( tile_y_unflipped + y );
 
 reg        sprite_flip_x;
 reg        sprite_flip_y;
@@ -1179,7 +1179,7 @@ reg  [9:0] y;
 //wire [9:0] sprite_buf_x =    flip ? 320 - (sprite_x + sprite_pos_x ) : sprite_x + sprite_pos_x;    // offset from left of frame
 
 wire [9:0] y_flipped    =  y ;
-wire [9:0] sprite_buf_x =  sprite_flip_x ? (sprite_pos_x + ~sprite_x) : (sprite_pos_x + sprite_x) ;    // offset from left of frame
+wire [9:0] sprite_buf_x =  tile_flip + ( sprite_flip_x ? (sprite_pos_x + ~sprite_x) : (sprite_pos_x + sprite_x) ) ;    // offset from left of frame
 
 reg [3:0] draw_state;
 reg [3:0] sprite_state;
