@@ -256,7 +256,7 @@ localparam CONF_STR = {
     "P3-;",
     "P3OF,68k Freq.,10Mhz,17.5MHz;",
     "P3-;",
-    "P3o0,No Death-Stop/Scroll Debug,Off,On;",
+    "P3o0,Scroll Debug,Off,On;",
     "P3-;",
     "DIP;",
     "-;",
@@ -270,7 +270,7 @@ localparam CONF_STR = {
 wire hps_forced_scandoubler;
 wire forced_scandoubler = hps_forced_scandoubler | status[10];
 
-wire  [2:0] buttons;
+wire  [1:0] buttons;
 wire [63:0] status;
 wire [10:0] ps2_key;
 wire [15:0] joy0, joy1;
