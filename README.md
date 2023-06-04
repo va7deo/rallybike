@@ -3,7 +3,7 @@
 
 FPGA compatible core of Toaplan Version 1 arcade hardware for [**MiSTerFPGA**](https://github.com/MiSTer-devel/Main_MiSTer/wiki) written by [**Darren Olafson**](https://twitter.com/Darren__O). Based on OutZone schematics and verified against Rally Bike (TP-012).
 
-The intent is for this core to be a 1:1 implementation of Toaplan V1 hardware. Currently in beta state, this core is in active development with assistance from [**atrac17**](https://github.com/atrac17).
+The intent is for this core to be a 1:1 **game play** FPGA implementation of Toaplan V1 hardware. Currently in beta state, this core is in active development with assistance from [**atrac17**](https://github.com/atrac17).
 
 Demon's World (TP-016), Tatsujin (TP-013B), Hellfire (TP-014), Zero Wing (TP-015), OutZone (TP-018), Vimana (TP-019), and Fire Shark (TP-017) are also Toaplan V1 titles. Separate repositories located [**here**](https://github.com/va7deo?tab=repositories).
 
@@ -13,7 +13,7 @@ Demon's World (TP-016), Tatsujin (TP-013B), Hellfire (TP-014), Zero Wing (TP-015
 
 | Title                                                                   | PCB<br>Number | Status      | Released |
 |-------------------------------------------------------------------------|---------------|-------------|----------|
-| [**Dash Yarou / Rally Bike**](https://en.wikipedia.org/wiki/Rally_Bike) | TP-012        | Implemented | Yes      |
+| [**Rally Bike / Dash Yarou**](https://en.wikipedia.org/wiki/Rally_Bike) | TP-012        | Implemented | Yes      |
 
 ## External Modules
 
@@ -73,11 +73,21 @@ _(Dash Yarou / Rally Bike)_
 | **SCU**                         | Sprite Controller  |
 | **BCU-02**                      | Tile Map Generator | <br>
 
-# Core Features
+### Screen Flip / Cocktail Support
 
-### Refresh Rate Compatibility Option
+| Title                       | Screen Flip | Cocktail Support | Implemented |
+|-----------------------------|-------------|------------------|-------------|
+| **Rally Bike / Dash Yarou** | Dipswitch   | Yes              | Yes         | <br>
 
-- Video timings can be modified if you experience sync issues with CRT or modern displays; this will alter gameplay from it's original state.
+# Core Options / Additional Features
+
+### Scroll Debug Options
+
+- Additional toggle that enables the third button for "Slow Scroll" in Rally Bike. Level skip is possible by pressing buttons 1 and 2 simultaneously. See the "PCB Information" section for further information.
+
+### Refresh Rate Compatibility Options
+
+- Additional toggle to modify video timings; only use for sync issues with an analog display or scroll jitter on a modern display. This is due to the hardware's low refresh rate, enabling the toggle alters gameplay from it's original state.
 
 | Refresh Rate      | Timing Parameter     | HTOTAL | VTOTAL |
 |-------------------|----------------------|--------|--------|
@@ -86,29 +96,27 @@ _(Dash Yarou / Rally Bike)_
 
 ### Audio Options
 
-- There is a toggle to adjust the gain and disable playback of OPL2 audio.
+- Additional toggle to adjust the volume gain or disable playback of OPL2 audio.
 
 ### Overclock Options
 
-- There is a toggle to increase the M68000 frequency from 10MHz to 17.5MHz; this will alter gameplay from it's original state.
+- Additional toggle to increase the M68000 frequency from 10MHz to 17.5MHz; this will alter gameplay from it's original state and address any undesired native slow down.
 
-### Native Y/C Output
+### Native Y/C Output ( 15kHz Displays )
 
 - Native Y/C ouput is possible with the [**analog I/O rev 6.1 pcb**](https://github.com/MiSTer-devel/Main_MiSTer/wiki/IO-Board). Using the following cables, [**HD-15 to BNC cable**](https://www.amazon.com/StarTech-com-Coax-RGBHV-Monitor-Cable/dp/B0033AF5Y0/) will transmit Y/C over the green and red lines. Choose an appropriate adapter to feed [**Y/C (S-Video)**](https://www.amazon.com/MEIRIYFA-Splitter-Extension-Monitors-Transmission/dp/B09N19XZJQ) to your display.
 
-### H/V Adjustments
+### H/V Adjustments ( 15kHz Displays )
 
-- There are two H/V toggles, H/V-sync positioning adjust and H/V-sync width adjust. Positioning will move the display for centering on CRT display. The sync width adjust can be used to for sync issues (rolling) without modifying the video timings.
+- Additional toggle for horizontal and vertical centering; the "H/V-Sync Pos Adj" toggles move the image to assist in screen centering if you choose not to adjust your displays settings.
 
-### Scandoubler Options
+- Additional toggle for horizontal and vertical sync width adjust; the "H/V-Sync Width Adj" toggles address "rolling sync" and "flagging" on certain displays.
 
-- Additional toggle to enable the scandoubler without changing ini settings and new scanline option for 100% is available, this draws a black line every other frame. Below is an example.
+### Scandoubler Options ( 31kHz Displays )
 
-<table><tr><th>Scandoubler Fx</th><th>Scanlines 25%</th><th>Scanlines 50%</th><th>Scanlines 75%</th><th>Scanlines 100%</th><tr><td><br> <p align="center"><img width="120" height="160" src="https://github.com/va7deo/rallybike/assets/32810066/6bc77f40-e73b-4446-bf2a-1cb654e71ce0"></td><td><br> <p align="center"><img width="120" height="160" src="https://github.com/va7deo/rallybike/assets/32810066/1495bfb7-db18-4b02-97c4-9220bcd60a21"></td><td><br> <p align="center"><img width="120" height="160" src="https://github.com/va7deo/rallybike/assets/32810066/c62818ba-c777-46f2-a445-3b7f7e8d8371"></td><td><br> <p align="center"><img width="120" height="160" src="https://github.com/va7deo/rallybike/assets/32810066/508ccac6-275f-4101-92dd-a056072fe52d"></td><td><br> <p align="center"><img width="120" height="160" src="https://github.com/va7deo/rallybike/assets/32810066/c805086b-aad9-439d-add7-b4cd02da70f3"></td></tr></table>
+- Additional toggle to enable the scandoubler (31kHz) without changing ini settings and a new scanline option for 100% is available; the new scanline setting draws a black line every other frame. Scandoubler options pass over HDMI as well.
 
-### Scroll Debug / No Death / Level Skip Option
-
-- There is a toggle to enable the third button for "Slow Scroll" in Dash Yarou. You can also skip the level by pressing buttons 1 and 2 simultaneously. See the "PCB Information" section for further information.
+<table><tr><th>Scandoubler Fx</th><th>Scanlines 25%</th><th>Scanlines 50%</th><th>Scanlines 75%</th><th>Scanlines 100%</th><tr><td><br> <p align="center"><img width="120" height="160" src="https://github.com/va7deo/rallybike/assets/32810066/6bc77f40-e73b-4446-bf2a-1cb654e71ce0"></td><td><br> <p align="center"><img width="120" height="160" src="https://github.com/va7deo/rallybike/assets/32810066/1495bfb7-db18-4b02-97c4-9220bcd60a21"></td><td><br> <p align="center"><img width="120" height="160" src="https://github.com/va7deo/rallybike/assets/32810066/c62818ba-c777-46f2-a445-3b7f7e8d8371"></td><td><br> <p align="center"><img width="120" height="160" src="https://github.com/va7deo/rallybike/assets/32810066/508ccac6-275f-4101-92dd-a056072fe52d"></td><td><br> <p align="center"><img width="120" height="160" src="https://github.com/va7deo/rallybike/assets/32810066/c805086b-aad9-439d-add7-b4cd02da70f3"></td></tr></table> <br>
 
 # PCB Information / Control Layout
 
@@ -131,6 +139,12 @@ _(Dash Yarou / Rally Bike)_
 | Player 1                                                                                                                                                                                                                                                                                             | Player 2                                                                                                                                                                                                                                                                         |
 |------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | <table> <tr><th>Functions</th><th>Keymap</th></tr><tr><td>P1 Up</td><td>Up</td></tr><tr><td>P1 Down</td><td>Down</td></tr><tr><td>P1 Left</td><td>Left</td></tr><tr><td>P1 Right</td><td>Right</td></tr><tr><td>P1 Bttn 1</td><td>L-CTRL</td></tr><tr><td>P1 Bttn 2</td><td>L-ALT</td></tr> </table> | <table> <tr><th>Functions</th><th>Keymap</th></tr><tr><td>P2 Up</td><td>R</td></tr><tr><td>P2 Down</td><td>F</td></tr><tr><td>P2 Left</td><td>D</td></tr><tr><td>P2 Right</td><td>G</td></tr><tr><td>P2 Bttn 1</td><td>A</td></tr><tr><td>P2 Bttn 2</td><td>S</td></tr> </table> |
+
+# Acknowledgments
+
+Special thanks to the following: <br>
+
+[**Esperanza Triana**](https://github.com/etriana85) for extracting Rally Bike [**schematics**](https://github.com/jotego/jtcores/tree/2a15813c019f8456cf7721236c24947c48d8ced4/cores/rbike/sch). <br>
 
 # Support
 
